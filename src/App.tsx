@@ -43,11 +43,11 @@ const AccountScreen = ({ setIsProfileOpen }) => (
     <div className="p-4 space-y-5 pb-6">
       {/* En-tête Profil */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
+        <img src="https://www.aip.ci/wp-content/uploads/2025/11/WhatsApp-Image-2025-11-06-at-09.39.49-e1762428819602.jpeg" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
         <div>
-          <h2 className="font-bold text-gray-800 text-lg leading-tight">Amadou T.</h2>
+          <h2 className="font-bold text-gray-800 text-lg leading-tight">SORO Wonnan</h2>
           <p className="text-xs text-gray-500">Culture : Maïs & Anacarde</p>
-          <p className="text-xs text-gray-500 mb-1">Localisation : Boundiali, Savanes</p>
+          <p className="text-xs text-gray-500 mb-1">Localisation : korhogo, Savanes</p>
           <span className="inline-block bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
             Forfait actuel : Découverte
           </span>
