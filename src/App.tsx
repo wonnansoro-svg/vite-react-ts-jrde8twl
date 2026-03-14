@@ -5,9 +5,28 @@ import {
   ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft
 } from 'lucide-react';
 
-// --- COMPOSANTS SÉPARÉS POUR ÉVITER LES ERREURS ROLLUP SUR VERCEL ---
+// --- DÉFINITION DES TYPES TYPESCRIPT ---
+type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
 
-const BottomNav = ({ activeTab, setActiveTab, setIsProfileOpen }) => (
+interface BottomNavProps {
+  activeTab: TabType;
+  setActiveTab: (tab: TabType) => void;
+  setIsProfileOpen: (isOpen: boolean) => void;
+}
+
+interface AccountScreenProps {
+  setIsProfileOpen: (isOpen: boolean) => void;
+}
+
+interface DashboardScreenProps {
+  isProfileOpen: boolean;
+  setIsProfileOpen: (isOpen: boolean) => void;
+  setActiveTab: (tab: TabType) => void;
+}
+
+// --- COMPOSANTS ---
+
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, setIsProfileOpen }) => (
   <div className="bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-4 text-[10px] text-gray-500">
     <button onClick={() => {setActiveTab('dashboard'); setIsProfileOpen(false);}} className={`flex flex-col items-center ${activeTab === 'dashboard' ? 'text-green-600 font-bold' : ''}`}>
       <Home size={20} className="mb-1" />
@@ -31,7 +50,7 @@ const BottomNav = ({ activeTab, setActiveTab, setIsProfileOpen }) => (
   </div>
 );
 
-const AccountScreen = ({ setIsProfileOpen }) => (
+const AccountScreen: React.FC<AccountScreenProps> = ({ setIsProfileOpen }) => (
   <div className="flex flex-col h-full bg-gray-50 overflow-y-auto animate-in fade-in duration-300">
     <div className="bg-green-700 text-white p-4 pt-6 flex items-center font-bold text-lg shadow-md z-10 sticky top-0">
       <button onClick={() => setIsProfileOpen(false)} className="mr-3 p-1.5 hover:bg-green-600 rounded-full transition-colors">
@@ -41,13 +60,12 @@ const AccountScreen = ({ setIsProfileOpen }) => (
     </div>
     
     <div className="p-4 space-y-5 pb-6">
-      {/* En-tête Profil */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-        <img src="https://www.aip.ci/wp-content/uploads/2025/11/WhatsApp-Image-2025-11-06-at-09.39.49-e1762428819602.jpeg" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
         <div>
-          <h2 className="font-bold text-gray-800 text-lg leading-tight">SORO Wonnan</h2>
+          <h2 className="font-bold text-gray-800 text-lg leading-tight">Amadou T.</h2>
           <p className="text-xs text-gray-500">Culture : Maïs & Anacarde</p>
-          <p className="text-xs text-gray-500 mb-1">Localisation : korhogo, Savanes</p>
+          <p className="text-xs text-gray-500 mb-1">Localisation : Boundiali, Savanes</p>
           <span className="inline-block bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
             Forfait actuel : Découverte
           </span>
@@ -57,7 +75,6 @@ const AccountScreen = ({ setIsProfileOpen }) => (
       <div>
         <h3 className="text-sm font-bold text-gray-800 mb-3">Mes Abonnements</h3>
         
-        {/* Forfait Gratuit */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-gray-400"></div>
           <div className="flex justify-between items-center mb-2">
@@ -72,7 +89,6 @@ const AccountScreen = ({ setIsProfileOpen }) => (
           <button className="w-full bg-gray-100 text-gray-500 py-2.5 rounded-lg text-xs font-bold" disabled>Forfait Actif</button>
         </div>
 
-        {/* Forfait Pro */}
         <div className="bg-green-50 rounded-xl shadow-md border-2 border-green-500 p-4 mb-3 relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">
             RECOMMANDÉ
@@ -95,7 +111,6 @@ const AccountScreen = ({ setIsProfileOpen }) => (
           </button>
         </div>
 
-        {/* Forfait Coopérative */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-2">
             <h4 className="font-bold text-blue-800">Coopérative</h4>
@@ -111,12 +126,11 @@ const AccountScreen = ({ setIsProfileOpen }) => (
   </div>
 );
 
-const DashboardScreen = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
+const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
   if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
 
   return (
     <div className="flex flex-col h-full bg-gray-100 overflow-y-auto">
-      {/* Header transparent */}
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent">
         <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
           <MapPin size={16} className="text-red-400" />
@@ -130,7 +144,6 @@ const DashboardScreen = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
         </button>
       </div>
       
-      {/* Simulation Google Earth Interactive */}
       <div className="relative h-[45%] min-h-[300px] bg-blue-100 flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
@@ -217,7 +230,7 @@ const DashboardScreen = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
   );
 };
 
-const WeatherScreen = () => {
+const WeatherScreen: React.FC = () => {
   const forecast = [
     { day: "Aujourd'hui", temp: "32°C", icon: <Sun className="text-orange-500" size={32}/>, action: "PULVÉRISATION OK", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps clair. Bon pour traiter les feuilles." },
     { day: "Demain", temp: "28°C", icon: <CloudRain className="text-blue-500" size={32}/>, action: "SEMIS CONSEILLÉ", actionColor: "bg-blue-100 text-blue-700 border-blue-500", desc: "Pluie attendue. Le sol sera parfait pour semer." },
@@ -253,7 +266,7 @@ const WeatherScreen = () => {
   );
 };
 
-const ChatScreen = () => (
+const ChatScreen: React.FC = () => (
   <div className="flex flex-col h-full bg-[#E5DDD5]">
     <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md">
       <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-3">
@@ -291,7 +304,7 @@ const ChatScreen = () => (
   </div>
 );
 
-const AlertScreen = () => (
+const AlertScreen: React.FC = () => (
   <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
     <div className="bg-red-600 text-white p-4 pt-6 text-center font-bold text-lg shadow-md flex items-center justify-center">
       <AlertTriangle className="mr-2" size={20} /> Détail de l'alerte
@@ -333,8 +346,8 @@ const AlertScreen = () => (
 // --- COMPOSANT PRINCIPAL ---
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   return (
     <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
