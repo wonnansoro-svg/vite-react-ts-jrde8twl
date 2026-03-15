@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Camera, Volume2, PhoneCall, 
   AlertTriangle, Send, Sun, Cloud, ThermometerSun, Bug, Leaf, 
-  ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft, Droplets, Wind, Phone
+  ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft, Droplets, Wind, Phone,
+  MessageSquare,
 } from 'lucide-react';
 
 //---Ajoutez ceci tout en haut avec vos autres imports pour les cartes Leaflet---
