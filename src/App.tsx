@@ -157,10 +157,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
       {/* --- LA VRAIE CARTE INTERACTIVE --- */}
       <div className="relative h-[45%] min-h-[300px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0">
         
-        {/* Le conteneur de la carte, centré entre les deux parcelles */}
+        {/* Le conteneur de la carte centré sur la zone agricole */}
         <MapContainer 
-          center={[9.5050, -6.4720]} 
-          zoom={15} 
+          center={[9.5050, -6.4700]} // On centre la caméra pile sur le champ
+          zoom={16} 
           style={{ height: '100%', width: '100%', zIndex: 0 }}
           zoomControl={false}
         >
@@ -170,7 +170,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             attribution='&copy; Esri'
           />
           
-          {/* --- 1ère Parcelle : MAÏS (En bonne santé - Verte) --- */}
+          {/* Le dessin de la parcelle avec son Popup NDVI */}
           <Polygon 
             positions={[
               [9.5065, -6.4715],
@@ -180,6 +180,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             ]}
             pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
           >
+            {/* La bulle qui s'affiche quand on clique sur la parcelle */}
             <Popup>
               <div className="text-center min-w-[120px]">
                 <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Maïs</h4>
@@ -192,30 +193,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
               </div>
             </Popup>
           </Polygon>
-
-          {/* --- 2ème Parcelle : ANACARDE (En stress - Orange) --- */}
-          <Polygon 
-            positions={[
-              [9.5065, -6.4755], // On décale vers l'Ouest
-              [9.5065, -6.4725],
-              [9.5035, -6.4725],
-              [9.5035, -6.4755],
-            ]}
-            pathOptions={{ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.5, weight: 3 }}
-          >
-            <Popup>
-              <div className="text-center min-w-[120px]">
-                <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Anacarde</h4>
-                <div className="bg-orange-100 text-orange-800 text-xs font-black px-2 py-1.5 rounded border border-orange-200 shadow-sm">
-                  NDVI : 0.35
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1 leading-tight">
-                  Stress hydrique détecté.<br/>Zone à risque (Chenilles).
-                </p>
-              </div>
-            </Popup>
-          </Polygon>
-
         </MapContainer>
 
         {/* La petite étiquette flottante avec le score de santé (qui reste par-dessus la carte) */}
@@ -326,94 +303,53 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
   );
 };
 const WeatherScreen: React.FC = () => {
+  // 1. Petite fonction magique pour calculer les jours automatiquement en français
+  const getDayName = (offset: number) => {
+    if (offset === 0) return "Aujourd'hui";
+    if (offset === 1) return "Demain";
+    
+    // On prend la date actuelle et on y ajoute le nombre de jours (offset)
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    
+    // On demande à JavaScript de nous donner le nom du jour en français
+    const dayString = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+    
+    // On met la première lettre en majuscule (ex: "mardi" devient "Mardi")
+    return dayString.charAt(0).toUpperCase() + dayString.slice(1);
+  };
+
+  // 2. On met à jour notre liste avec notre fonction getDayName()
+  const forecast = [
+    { day: getDayName(0), temp: "32°C", icon: <Sun className="text-orange-500" size={32}/>, action: "PULVÉRISATION OK", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps clair. Bon pour traiter les feuilles." },
+    { day: getDayName(1), temp: "28°C", icon: <CloudRain className="text-blue-500" size={32}/>, action: "SEMIS CONSEILLÉ", actionColor: "bg-blue-100 text-blue-700 border-blue-500", desc: "Pluie attendue. Le sol sera parfait pour semer." },
+    { day: getDayName(2), temp: "30°C", icon: <Wind className="text-gray-500" size={32}/>, action: "INTERDIT : TRAITEMENT", actionColor: "bg-red-100 text-red-700 border-red-500", desc: "Vents très forts. Les produits vont s'envoler.", badIcon: <Ban size={16} className="mr-1 inline"/> },
+    { day: getDayName(3), temp: "34°C", icon: <ThermometerSun className="text-red-500" size={32}/>, action: "ATTENTION : CHALEUR", actionColor: "bg-orange-100 text-orange-700 border-orange-500", desc: "Ne pas travailler au champ à midi." },
+    { day: getDayName(4), temp: "31°C", icon: <Cloud className="text-gray-400" size={32}/>, action: "RÉCOLTE POSSIBLE", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps nuageux et doux." },
+  ];
+
   return (
-    <div className="flex flex-col h-full bg-[#F5F5F0] overflow-y-auto">
-      {/* --- EN-TÊTE --- */}
-      <div className="bg-blue-600 text-white p-4 pt-6 flex items-center shadow-md">
-        <CloudRain className="mr-2" size={24} />
-        <h2 className="font-bold text-lg">Météo & Travaux</h2>
+    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
+      <div className="bg-green-700 text-white p-4 pt-6 text-center font-bold text-lg shadow-md z-10 sticky top-0">
+        Météo & Travaux (5 Jours)
       </div>
-
-      <div className="p-4 space-y-4 pb-24">
-        
-        {/* --- CARTE DU JOUR (Avec fond de paysage agricole tropical) --- */}
-        <div className="relative bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
-          {/* Image d'un champ en Afrique sous le soleil */}
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1625244724120-1fd1d34d00f6?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center opacity-50"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/95 to-blue-900/60"></div>
-          
-          <div className="relative p-5 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-xl">Boundiali</h3>
-                <p className="text-sm text-blue-100">Aujourd'hui</p>
-              </div>
-              <Sun size={32} className="text-yellow-400 animate-pulse" />
+      <div className="p-3 space-y-3 pb-6">
+        {forecast.map((item, index) => (
+          <div key={index} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-gray-100 pr-3">
+              {item.icon}
+              <span className="font-bold text-gray-800 text-sm mt-1">{item.temp}</span>
+              <span className="text-[10px] text-gray-400 font-medium">{item.day}</span>
             </div>
-            
-            <div className="mt-6 flex items-end space-x-4">
-              <span className="text-5xl font-black">34°C</span>
-              <span className="text-lg text-blue-100 mb-1">Ensoleillé et sec</span>
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-2 bg-black/30 rounded-xl p-3 backdrop-blur-sm border border-white/10">
-              <div className="text-center">
-                <Droplets size={16} className="mx-auto text-blue-300 mb-1" />
-                <span className="text-xs font-bold block">Humidité</span>
-                <span className="text-xs text-blue-100">45%</span>
-              </div>
-              <div className="text-center border-l border-r border-white/20">
-                <Wind size={16} className="mx-auto text-gray-300 mb-1" />
-                <span className="text-xs font-bold block">Vent</span>
-                <span className="text-xs text-blue-100">12 km/h</span>
-              </div>
-              <div className="text-center">
-                <ThermometerSun size={16} className="mx-auto text-red-300 mb-1" />
-                <span className="text-xs font-bold block">Ressenti</span>
-                <span className="text-xs text-blue-100">36°C</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h4 className="font-bold text-gray-800 text-sm mt-6 mb-2">Prévisions pour vos cultures</h4>
-        
-        <div className="space-y-3">
-          {/* JOUR 1 - Arrivée de la pluie */}
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex items-center">
-            {/* Image de pluie sur la terre */}
-            <img src="https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=150" alt="Terre mouillée" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
             <div className="flex-grow">
-              <div className="flex justify-between">
-                <span className="font-bold text-sm text-gray-800">Demain</span>
-                <span className="font-bold text-sm text-blue-600">28°C</span>
+              <div className={`text-xs font-black uppercase px-2 py-1 rounded border ${item.actionColor} inline-flex items-center mb-1`}>
+                {item.badIcon && item.badIcon}
+                {item.action}
               </div>
-              <div className="flex items-center text-xs text-blue-600 mt-0.5 font-bold">
-                <CloudRain size={14} className="mr-1" />
-                <span>Fortes pluies (80%)</span>
-              </div>
-              <p className="text-[10px] text-gray-600 mt-1 leading-tight">La terre sera bien humide. Idéal pour préparer vos semis. <strong className="text-red-500">Ne pas pulvériser l'anacarde.</strong></p>
+              <p className="text-xs text-gray-600 leading-tight">{item.desc}</p>
             </div>
           </div>
-
-          {/* JOUR 2 - Temps nuageux type savane */}
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex items-center">
-            {/* Image de savane nuageuse */}
-            <img src="https://images.unsplash.com/photo-1595841696650-6101235b0b2e?auto=format&fit=crop&q=80&w=150" alt="Paysage savane" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
-            <div className="flex-grow">
-              <div className="flex justify-between">
-                <span className="font-bold text-sm text-gray-800">Après-demain</span>
-                <span className="font-bold text-sm text-gray-600">31°C</span>
-              </div>
-              <div className="flex items-center text-xs text-gray-600 mt-0.5 font-bold">
-                <Cloud size={14} className="mr-1" />
-                <span>Ciel voilé (20%)</span>
-              </div>
-              <p className="text-[10px] text-gray-600 mt-1 leading-tight">Température clémente. Excellentes conditions pour le sarclage de la parcelle de Maïs.</p>
-            </div>
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
   );
