@@ -457,7 +457,6 @@ const ChatScreen: React.FC = () => {
       {/* --- ZONE DE MESSAGES --- */}
       <div className="flex-grow p-4 overflow-y-auto space-y-4 pb-24">
         
-        {/* Message de l'IA (Initialisation) */}
         <div className="flex items-start max-w-[90%]">
           <div className="bg-green-100 p-2 rounded-full mr-2 shadow-sm border border-green-200 flex-shrink-0">
             <Leaf className="text-green-700" size={18} />
@@ -472,7 +471,6 @@ const ChatScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Message de l'Agriculteur */}
         <div className="flex items-start flex-row-reverse max-w-[90%] self-end ml-auto">
           <div className="bg-blue-100 p-2 rounded-full ml-2 shadow-sm border border-blue-200 flex-shrink-0">
             <Home className="text-blue-700" size={18} />
@@ -482,7 +480,6 @@ const ChatScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Message de l'IA (Réponse d'expert) */}
         <div className="flex items-start max-w-[95%]">
           <div className="bg-green-100 p-2 rounded-full mr-2 shadow-sm border border-green-200 flex-shrink-0 mt-1">
             <Leaf className="text-green-700" size={18} />
