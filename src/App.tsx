@@ -280,10 +280,12 @@ const ChatScreen: React.FC = () => {
   const handleSendMessage = () => {
     if (inputValue.trim() === '') return; // On n'envoie pas de message vide
 
-    // On ajoute le message de l'utilisateur
+    const userText = inputValue; // On sauvegarde le texte
+    
+    // 1. On affiche le message de l'utilisateur
     const newUserMsg = { 
       id: Date.now(), 
-      text: inputValue, 
+      text: userText, 
       sender: 'user', 
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     };
@@ -291,18 +293,38 @@ const ChatScreen: React.FC = () => {
     setMessages(prevMessages => [...prevMessages, newUserMsg]);
     setInputValue(''); // On vide le champ texte
 
-    // On simule l'IA qui "réfléchit" et répond après 1 seconde
+    // 2. Le mini-cerveau de l'IA analyse la phrase
     setTimeout(() => {
+      let botResponse = "C'est noté. Je mets à jour le dossier de cette parcelle.";
+      const texteMinuscule = userText.toLowerCase();
+
+      // Mots-clés Météo
+      if (texteMinuscule.includes('météo') || texteMinuscule.includes('pluie') || texteMinuscule.includes('soleil')) {
+        botResponse = "D'après mes capteurs à Boundiali, il y a 80% de chances de pluie demain. Je déconseille toute pulvérisation aujourd'hui.";
+      } 
+      // Mots-clés Maladies/Insectes
+      else if (texteMinuscule.includes('chenille') || texteMinuscule.includes('maladie') || texteMinuscule.includes('insecte')) {
+        botResponse = "Pour les chenilles légionnaires, je vous recommande un traitement à base de Neem. Voulez-vous que je vérifie les stocks de la coopérative ?";
+      } 
+      // Mots-clés Salutations
+      else if (texteMinuscule.includes('bonjour') || texteMinuscule.includes('salut')) {
+        botResponse = "Bonjour ! Comment se portent vos plants de maïs aujourd'hui ?";
+      }
+      // Mots-clés Remerciements
+      else if (texteMinuscule.includes('merci')) {
+        botResponse = "Avec grand plaisir ! Je reste à votre disposition si vous avez un doute sur vos cultures.";
+      }
+
+      // 3. On affiche la réponse de l'IA
       const newBotMsg = { 
         id: Date.now() + 1, 
-        text: "C'est noté. Je mets à jour les recommandations pour cette parcelle. Avez-vous besoin d'un rappel pour le traitement ?", 
+        text: botResponse, 
         sender: 'bot', 
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
       };
       setMessages(prevMessages => [...prevMessages, newBotMsg]);
-    }, 1000);
+    }, 1200); // L'IA "tape" pendant 1.2 secondes
   };
-
   return (
     <div className="flex flex-col h-full bg-[#E5DDD5]">
       <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md">
