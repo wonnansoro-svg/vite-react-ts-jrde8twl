@@ -127,10 +127,14 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ setIsProfileOpen }) => (
 );
 
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
+  // 1. On crée un état pour savoir quelle culture est cliquée (null = aucune)
+  const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
+
   if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 overflow-y-auto">
+    <div className="flex flex-col h-full bg-gray-100 overflow-y-auto relative">
+      {/* --- EN-TÊTE ET CARTE SATELLITE --- */}
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent">
         <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
           <MapPin size={16} className="text-red-400" />
@@ -159,20 +163,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
           <text x="187" y="171" fontSize="11" fontWeight="bold" fill="#166534" textAnchor="middle">3.2 ha</text>
         </svg>
 
-        <div className="absolute top-1/3 left-1/4 w-28 h-28 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-80"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-20 h-20 bg-red-500 rounded-full mix-blend-multiply filter blur-xl opacity-90 text-white flex justify-center items-center font-bold text-xs"><AlertTriangle className="animate-pulse"/></div>
-        
-        <div className="absolute right-3 bottom-6 flex flex-col space-y-2 z-10">
-          <button className="bg-white/95 p-2.5 rounded-xl shadow-lg text-gray-700 hover:bg-gray-50"><Layers size={22}/></button>
-          <div className="bg-white/95 rounded-xl shadow-lg flex flex-col overflow-hidden">
-            <button className="p-2.5 border-b hover:bg-gray-50"><ZoomIn size={22} className="text-gray-700"/></button>
-            <button className="p-2.5 hover:bg-gray-50"><ZoomOut size={22} className="text-gray-700"/></button>
-          </div>
-          <button className="bg-green-600 text-white p-2.5 rounded-xl shadow-lg mt-2 flex items-center justify-center hover:bg-green-700">
-            <Edit3 size={22} />
-          </button>
-        </div>
-
         <div className="absolute bottom-6 left-3 z-10 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3">
           <div className="bg-green-100 p-2 rounded-full">
             <Leaf className="text-green-600" size={24} />
@@ -184,26 +174,38 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
         </div>
       </div>
 
+      {/* --- SECTION DES CULTURES --- */}
       <div className="p-4 flex flex-col space-y-5">
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center">
             <Leaf className="mr-2 text-green-600" size={18} /> État de mes cultures
           </h3>
           <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-            <div className="min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            
+            {/* Bouton cliquable Maïs */}
+            <div 
+              onClick={() => setSelectedCrop('Maïs')}
+              className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
+            >
               <div className="h-20 bg-[url('https://images.unsplash.com/photo-1601493700631-2b1619b013b8?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center"></div>
               <div className="p-2 text-center">
                 <p className="font-bold text-gray-800 text-sm">Maïs</p>
                 <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">✅ En forme</span>
               </div>
             </div>
-            <div className="min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+            {/* Bouton cliquable Anacarde */}
+            <div 
+              onClick={() => setSelectedCrop('Anacarde')}
+              className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
+            >
               <div className="h-20 bg-[url('https://images.unsplash.com/photo-1587334274328-64186a80aeee?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center"></div>
               <div className="p-2 text-center">
                 <p className="font-bold text-gray-800 text-sm">Anacarde</p>
                 <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">⚠️ À surveiller</span>
               </div>
             </div>
+
           </div>
         </div>
 
@@ -226,10 +228,45 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
           </div>
         </div>
       </div>
+
+      {/* --- LE POPUP (MODAL) QUI S'AFFICHE AU CLIC --- */}
+      {selectedCrop && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-800 mb-1 flex items-center">
+              Détails : {selectedCrop}
+            </h3>
+            
+            {selectedCrop === 'Maïs' ? (
+              <div className="mt-3 space-y-3">
+                <div className="flex justify-between items-center bg-green-50 p-2 rounded-lg border border-green-100">
+                  <span className="text-sm font-bold text-green-800">Santé globale</span>
+                  <span className="text-sm font-black text-green-700">92%</span>
+                </div>
+                <p className="text-sm text-gray-600">Votre parcelle de Maïs est en excellente santé. L'irrigation actuelle est parfaite. La floraison devrait commencer d'ici 12 jours.</p>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <div className="flex justify-between items-center bg-orange-50 p-2 rounded-lg border border-orange-100">
+                  <span className="text-sm font-bold text-orange-800">Santé globale</span>
+                  <span className="text-sm font-black text-orange-700">65%</span>
+                </div>
+                <p className="text-sm text-gray-600">L'Anacarde montre des signes de stress thermique. Surveillez l'apparition d'insectes piqueurs. Un apport en eau est vivement conseillé d'ici ce soir.</p>
+              </div>
+            )}
+            
+            <button 
+              onClick={() => setSelectedCrop(null)} 
+              className="mt-5 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold text-sm transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 const WeatherScreen: React.FC = () => {
   // 1. Petite fonction magique pour calculer les jours automatiquement en français
   const getDayName = (offset: number) => {
