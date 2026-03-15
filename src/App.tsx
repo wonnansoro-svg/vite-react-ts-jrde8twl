@@ -157,10 +157,10 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
       {/* --- LA VRAIE CARTE INTERACTIVE --- */}
       <div className="relative h-[45%] min-h-[300px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0">
         
-        {/* Le conteneur de la carte centré sur la zone agricole */}
+        {/* Le conteneur de la carte, centré entre les deux parcelles */}
         <MapContainer 
-          center={[9.5050, -6.4700]} // On centre la caméra pile sur le champ
-          zoom={16} 
+          center={[9.5050, -6.4720]} 
+          zoom={15} 
           style={{ height: '100%', width: '100%', zIndex: 0 }}
           zoomControl={false}
         >
@@ -170,7 +170,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             attribution='&copy; Esri'
           />
           
-          {/* Le dessin de la parcelle avec son Popup NDVI */}
+          {/* --- 1ère Parcelle : MAÏS (En bonne santé - Verte) --- */}
           <Polygon 
             positions={[
               [9.5065, -6.4715],
@@ -180,7 +180,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             ]}
             pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
           >
-            {/* La bulle qui s'affiche quand on clique sur la parcelle */}
             <Popup>
               <div className="text-center min-w-[120px]">
                 <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Maïs</h4>
@@ -193,6 +192,30 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
               </div>
             </Popup>
           </Polygon>
+
+          {/* --- 2ème Parcelle : ANACARDE (En stress - Orange) --- */}
+          <Polygon 
+            positions={[
+              [9.5065, -6.4755], // On décale vers l'Ouest
+              [9.5065, -6.4725],
+              [9.5035, -6.4725],
+              [9.5035, -6.4755],
+            ]}
+            pathOptions={{ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.5, weight: 3 }}
+          >
+            <Popup>
+              <div className="text-center min-w-[120px]">
+                <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Anacarde</h4>
+                <div className="bg-orange-100 text-orange-800 text-xs font-black px-2 py-1.5 rounded border border-orange-200 shadow-sm">
+                  NDVI : 0.35
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1 leading-tight">
+                  Stress hydrique détecté.<br/>Zone à risque (Chenilles).
+                </p>
+              </div>
+            </Popup>
+          </Polygon>
+
         </MapContainer>
 
         {/* La petite étiquette flottante avec le score de santé (qui reste par-dessus la carte) */}
