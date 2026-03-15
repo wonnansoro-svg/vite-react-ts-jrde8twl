@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Camera, Volume2, PhoneCall, 
   AlertTriangle, Wind, Send, Sun, Cloud, ThermometerSun, Bug, Leaf, 
-  ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft
+  ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft,
+  Phone
 } from 'lucide-react';
 
 // --- DÉFINITION DES TYPES TYPESCRIPT ---
@@ -187,7 +188,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
               onClick={() => setSelectedCrop('Maïs')}
               className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
             >
-              <div className="h-20 bg-[url('https://images.unsplash.com/photo-1601493700631-2b1619b013b8?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center"></div>
+              <div className="h-20 bg-[url('https://fr.freepik.com/photos-gratuite/mais-tige-pret-etre-recolte-dans-champ_7957173.htm#fromView=keyword&page=1&position=0&uuid=69107b29-abb9-4b53-915a-b4d2f0ada7fb&query=Champ+de+mais')] bg-cover bg-center"></div>
               <div className="p-2 text-center">
                 <p className="font-bold text-gray-800 text-sm">Maïs</p>
                 <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">✅ En forme</span>
@@ -199,7 +200,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
               onClick={() => setSelectedCrop('Anacarde')}
               className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
             >
-              <div className="h-20 bg-[url('https://images.unsplash.com/photo-1587334274328-64186a80aeee?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center"></div>
+              <div className="h-20 bg-[url('https://magazinedelafrique.com/wp-content/uploads/2020/12/Laanacarde-objet-de-tous-les-soins.jpg')] bg-cover bg-center"></div>
               <div className="p-2 text-center">
                 <p className="font-bold text-gray-800 text-sm">Anacarde</p>
                 <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">⚠️ À surveiller</span>
@@ -214,7 +215,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             <AlertTriangle className="mr-2" size={18} /> Zones Critiques & Alertes
           </h3>
           <div className="bg-white rounded-xl shadow-sm border-l-4 border-red-500 p-3 flex items-center space-x-3">
-            <img src="https://images.unsplash.com/photo-1599596638426-38290f96f014?auto=format&fit=crop&q=80&w=150" alt="Chenille" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+            <img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenille" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
             <div className="flex-grow">
               <div className="flex justify-between items-start">
                 <h4 className="font-bold text-gray-800 text-sm">Attaque de Chenilles</h4>
@@ -430,44 +431,60 @@ const ChatScreen: React.FC = () => {
   );
 };
 
-const AlertScreen: React.FC = () => (
-  <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
-    <div className="bg-red-600 text-white p-4 pt-6 text-center font-bold text-lg shadow-md flex items-center justify-center">
-      <AlertTriangle className="mr-2" size={20} /> Détail de l'alerte
-    </div>
-    <div className="p-4 flex flex-col flex-grow">
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-red-100 mb-4">
-        <div className="bg-red-50 p-3 border-b border-red-100">
-          <h3 className="text-red-700 font-black flex items-center text-sm">⚠️ ALERTE CRITIQUE (80%)</h3>
-          <p className="text-gray-800 font-bold mt-1 text-lg">Risque Chenilles Légionnaires</p>
-        </div>
-        <div className="h-48 bg-gray-200 relative">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1599596638426-38290f96f014?auto=format&fit=crop&q=80&w=600')] bg-cover bg-center"></div>
-        </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <h4 className="text-xs font-bold text-gray-500 uppercase mb-1">Analyse</h4>
-            <p className="text-sm text-gray-700">L'humidité actuelle combinée aux fortes chaleurs récentes favorisent massivement l'éclosion des larves dans la parcelle Sud.</p>
+const AlertScreen: React.FC = () => {
+  return (
+    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
+      {/* --- EN-TÊTE --- */}
+      <div className="bg-red-600 text-white p-4 pt-6 flex items-center shadow-md">
+        <AlertTriangle className="mr-2 animate-pulse" size={24} />
+        <h2 className="font-bold text-lg">Alerte Critique</h2>
+      </div>
+
+      <div className="p-4 space-y-4 pb-24">
+        {/* --- CARTE D'ALERTE --- */}
+        <div className="bg-white rounded-xl shadow-md border-2 border-red-500 overflow-hidden">
+          <img 
+            src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" 
+            alt="Chenille légionnaire" 
+            className="w-full h-48 object-cover"
+          />
+          <div className="p-4">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-lg font-black text-gray-800">Chenille Légionnaire</h3>
+              <span className="bg-red-100 text-red-800 text-[10px] uppercase font-bold px-2 py-1 rounded animate-pulse">
+                Urgence Absolue
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Détection confirmée sur la parcelle <strong>Maïs Sud</strong>. Risque de destruction rapide de la culture (plus de 15% de dégâts estimés).
+            </p>
+            
+            <div className="bg-red-50 p-3 rounded-lg border border-red-100 mb-5">
+              <h4 className="text-sm font-bold text-red-800 mb-1">Action Requise Aujourd'hui :</h4>
+              <p className="text-xs text-red-700">Application d'un traitement phytosanitaire homologué. Ne pas attendre.</p>
+            </div>
+
+            {/* --- LE BOUTON D'APPEL MAGIQUE --- */}
+            {/* Le href="tel:..." est ce qui déclenche l'appel sur le téléphone */}
+            <a 
+              href="tel:+2250778014537" 
+              className="w-full flex items-center justify-center bg-red-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md hover:bg-red-700 active:scale-95 transition-transform"
+            >
+              <Phone className="mr-2" size={20} />
+              APPELER LE TECHNICIEN
+            </a>
           </div>
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <h4 className="text-xs font-bold text-yellow-800 uppercase mb-2">Actions recommandées :</h4>
-            <ul className="text-sm text-gray-700 space-y-2 list-disc pl-4">
-              <li>Inspecter le cœur des plants de maïs immédiatement.</li>
-              <li>Appliquer le traitement préventif bio d'ici 24h.</li>
-              <li>Installer des pièges à phéromones.</li>
-            </ul>
-          </div>
+        </div>
+        
+        {/* --- HISTORIQUE (Petit plus pour faire pro) --- */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+           <h4 className="font-bold text-gray-800 text-sm mb-2">Historique des alertes</h4>
+           <p className="text-xs text-gray-500 italic">Aucune autre alerte récente sur cette parcelle au cours des 30 derniers jours.</p>
         </div>
       </div>
-      <div className="mt-auto pt-4">
-        <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center transition-colors">
-          <PhoneCall className="mr-3" size={24} /> APPELER LE TECHNICIEN
-        </button>
-        <p className="text-center text-xs text-gray-400 mt-2">Mise en relation directe avec la coopérative</p>
-      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- COMPOSANT PRINCIPAL ---
 
