@@ -132,199 +132,120 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ setIsProfileOpen }) => (
   </div>
 );
 
-const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsProfileOpen, setActiveTab }) => {
-  // 1. On crée un état pour savoir quelle culture est cliquée (null = aucune)
-  const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
-
-  if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
-
+const DashboardScreen: React.FC = () => {
   return (
-    <div className="flex flex-col h-full bg-gray-100 overflow-y-auto relative">
-      {/* --- EN-TÊTE ET CARTE SATELLITE --- */}
-      <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent">
-        <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
-          <MapPin size={16} className="text-red-400" />
-          <span className="text-white font-bold text-xs shadow-sm">Korhogo, Savanes</span>
-        </div>
-        <button 
-          onClick={() => setIsProfileOpen(true)}
-          className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center text-green-700 shadow-lg overflow-hidden transition transform hover:scale-105"
-        >
-          <img src="https://www.linkedin.com/in/wonnan-soro-700732143/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3BIQAVee26RBuSJMPmMBsfPw%3D%3D" alt="Profil Agriculteur" className="w-full h-full object-cover" />
-        </button>
-      </div>
+    <div className="flex flex-col h-full bg-[#F5F5F0] overflow-y-auto pb-20">
       
-      {/* --- LA VRAIE CARTE INTERACTIVE --- */}
-      <div className="relative h-[45%] min-h-[300px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0">
+      {/* --- EN-TÊTE DU DASHBOARD --- */}
+      <div className="bg-green-700 text-white p-5 pt-8 rounded-b-3xl shadow-lg shrink-0">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="font-bold text-2xl tracking-tight">Mon Exploitation</h1>
+            <div className="flex items-center text-green-200 mt-1">
+              <MapPin size={14} className="mr-1" />
+              <span className="text-sm font-medium">Boundiali, Côte d'Ivoire</span>
+            </div>
+          </div>
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+            <Sun size={24} className="text-yellow-300" />
+          </div>
+        </div>
         
-        {/* Le conteneur de la carte, centré entre les deux parcelles */}
-        <MapContainer 
-          center={[9.5050, -6.4720]} 
-          zoom={15} 
-          style={{ height: '100%', width: '100%', zIndex: 0 }}
-          zoomControl={false}
-        >
-          {/* La couche d'images satellites */}
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            attribution='&copy; Esri'
-          />
+        {/* Alerte Rapide */}
+        <div className="mt-6 bg-red-500/20 border border-red-500/50 rounded-xl p-3 flex items-center backdrop-blur-sm">
+          <AlertTriangle size={20} className="text-red-300 mr-3 flex-shrink-0" />
+          <p className="text-xs text-white leading-tight">
+            <strong className="block text-red-200">Alerte IA :</strong>
+            Risque élevé de chenille légionnaire sur le Maïs aujourd'hui.
+          </p>
+        </div>
+      </div>
+
+      {/* --- ÉTAT DES CULTURES (Les fameuses images) --- */}
+      <div className="p-4 mt-2">
+        <h2 className="font-bold text-gray-800 mb-3 flex items-center text-lg">
+          <Leaf className="mr-2 text-green-600" size={20} />
+          État de vos cultures
+        </h2>
+        
+        <div className="grid grid-cols-2 gap-4">
           
-          {/* --- 1ère Parcelle : MAÏS (En bonne santé - Verte) --- */}
-          <Polygon 
-            positions={[
-              [9.5065, -6.4715],
-              [9.5065, -6.4685],
-              [9.5035, -6.4685],
-              [9.5035, -6.4715],
-            ]}
-            pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
-          >
-            <Popup>
-              <div className="text-center min-w-[120px]">
-                <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Maïs</h4>
-                <div className="bg-green-100 text-green-800 text-xs font-black px-2 py-1.5 rounded border border-green-200 shadow-sm">
-                  NDVI : 0.78
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1 leading-tight">
-                  Végétation dense et saine.<br/>Dernier relevé : Aujourd'hui.
-                </p>
+          {/* Carte 1 : Maïs */}
+          <div className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200 aspect-[4/5] group">
+            {/* Image de fond Unsplash */}
+            <img 
+              src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&q=80&w=400" 
+              alt="Champ de Maïs" 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            />
+            {/* Dégradé pour rendre le texte lisible */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+            
+            {/* Badge d'Alerte en haut à droite */}
+            <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1.5 rounded-full flex items-center shadow-md animate-pulse">
+              <Bug size={12} className="mr-1" /> Risque
+            </div>
+
+            {/* Informations en bas */}
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+              <h3 className="text-white font-bold text-base leading-tight">Parcelle Maïs</h3>
+              <p className="text-gray-300 text-[10px] mb-1.5">3.2 Hectares</p>
+              <div className="flex items-center bg-black/40 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>
+                <span className="text-xs text-green-300 font-bold tracking-wider">NDVI 0.78</span>
               </div>
-            </Popup>
-          </Polygon>
+            </div>
+          </div>
 
-          {/* --- 2ème Parcelle : ANACARDE (En stress - Orange) --- */}
-          <Polygon 
-            positions={[
-              [9.5065, -6.4755], // On décale vers l'Ouest
-              [9.5065, -6.4725],
-              [9.5035, -6.4725],
-              [9.5035, -6.4755],
-            ]}
-            pathOptions={{ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.5, weight: 3 }}
-          >
-            <Popup>
-              <div className="text-center min-w-[120px]">
-                <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Anacarde</h4>
-                <div className="bg-orange-100 text-orange-800 text-xs font-black px-2 py-1.5 rounded border border-orange-200 shadow-sm">
-                  NDVI : 0.35
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1 leading-tight">
-                  Stress hydrique détecté.<br/>Zone à risque (Chenilles).
-                </p>
+          {/* Carte 2 : Anacarde */}
+          <div className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200 aspect-[4/5] group">
+            <img 
+              src="https://images.unsplash.com/photo-1628183188547-49f3e45dc5f2?auto=format&fit=crop&q=80&w=400" 
+              alt="Anacardier" 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+            
+            <div className="absolute top-2 right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-1.5 rounded-full flex items-center shadow-md">
+              <Droplets size={12} className="mr-1" /> Stress
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+              <h3 className="text-white font-bold text-base leading-tight">Anacarderaie</h3>
+              <p className="text-gray-300 text-[10px] mb-1.5">5.0 Hectares</p>
+              <div className="flex items-center bg-black/40 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-yellow-500 mr-1.5"></span>
+                <span className="text-xs text-yellow-300 font-bold tracking-wider">NDVI 0.35</span>
               </div>
-            </Popup>
-          </Polygon>
-
-        </MapContainer>
-
-        {/* La petite étiquette flottante avec le score de santé (qui reste par-dessus la carte) */}
-        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none"
-          style={{ zIndex: 1000 }} // Nécessaire pour passer au-dessus de Leaflet
->
-          <div className="bg-green-100 p-2 rounded-full">
-            <Leaf className="text-green-600" size={24} />
+            </div>
           </div>
-          <div className="flex flex-col">
-            <p className="text-[10px] text-gray-500 font-bold uppercase leading-none mb-1">Santé Parcelle</p>
-            <p className="text-2xl font-black text-gray-800 leading-none">85%</p>
-          </div>
+
         </div>
       </div>
 
-      {/* --- SECTION DES CULTURES --- */}
-      <div className="p-4 flex flex-col space-y-5">
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center">
-            <Leaf className="mr-2 text-green-600" size={18} /> État de mes cultures
-          </h3>
-          <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-            
-            {/* Bouton cliquable Maïs */}
-            <div 
-              onClick={() => setSelectedCrop('Maïs')}
-              className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
-            >
-              <div className="h-20 bg-[url('https://static.lebulletin.com/wp-content/uploads/2017/09/ma%C3%AFs-%C3%A9pi-champ-e1533057090112.jpg')] bg-cover bg-center"></div>
-              <div className="p-2 text-center">
-                <p className="font-bold text-gray-800 text-sm">Maïs</p>
-                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">✅ En forme</span>
-              </div>
+      {/* --- ACTIONS RAPIDES --- */}
+      <div className="p-4">
+        <h2 className="font-bold text-gray-800 mb-3 text-sm">Actions recommandées</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="bg-blue-100 p-2 rounded-lg mr-3 text-blue-600">
+              <CloudRain size={20} />
             </div>
-
-            {/* Bouton cliquable Anacarde */}
-            <div 
-              onClick={() => setSelectedCrop('Anacarde')}
-              className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
-            >
-              <div className="h-20 bg-[url('https://magazinedelafrique.com/wp-content/uploads/2020/12/Laanacarde-objet-de-tous-les-soins.jpg')] bg-cover bg-center"></div>
-              <div className="p-2 text-center">
-                <p className="font-bold text-gray-800 text-sm">Anacarde</p>
-                <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">⚠️ À surveiller</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center">
-            <AlertTriangle className="mr-2" size={18} /> Zones Critiques & Alertes
-          </h3>
-          <div className="bg-white rounded-xl shadow-sm border-l-4 border-red-500 p-3 flex items-center space-x-3">
-            <img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenille" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
-            <div className="flex-grow">
-              <div className="flex justify-between items-start">
-                <h4 className="font-bold text-gray-800 text-sm">Attaque de Chenilles</h4>
-                <Bug size={16} className="text-red-500" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight mt-1">Parcelle Maïs Sud. Traitement urgent requis.</p>
-              <button onClick={() => setActiveTab('alert')} className="mt-2 text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded w-full">
-                Voir l'Alerte
-              </button>
+            <div>
+              <p className="font-bold text-sm text-gray-800">Planifier semis</p>
+              <p className="text-[10px] text-gray-500">Pluies attendues demain</p>
             </div>
           </div>
+          <button className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
+            Détails
+          </button>
         </div>
       </div>
 
-      {/* --- LE POPUP (MODAL) QUI S'AFFICHE AU CLIC --- */}
-      {selectedCrop && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-gray-800 mb-1 flex items-center">
-              Détails : {selectedCrop}
-            </h3>
-            
-            {selectedCrop === 'Maïs' ? (
-              <div className="mt-3 space-y-3">
-                <div className="flex justify-between items-center bg-green-50 p-2 rounded-lg border border-green-100">
-                  <span className="text-sm font-bold text-green-800">Santé globale</span>
-                  <span className="text-sm font-black text-green-700">92%</span>
-                </div>
-                <p className="text-sm text-gray-600">Votre parcelle de Maïs est en excellente santé. L'irrigation actuelle est parfaite. La floraison devrait commencer d'ici 12 jours.</p>
-              </div>
-            ) : (
-              <div className="mt-3 space-y-3">
-                <div className="flex justify-between items-center bg-orange-50 p-2 rounded-lg border border-orange-100">
-                  <span className="text-sm font-bold text-orange-800">Santé globale</span>
-                  <span className="text-sm font-black text-orange-700">65%</span>
-                </div>
-                <p className="text-sm text-gray-600">L'Anacarde montre des signes de stress thermique. Surveillez l'apparition d'insectes piqueurs. Un apport en eau est vivement conseillé d'ici ce soir.</p>
-              </div>
-            )}
-            
-            <button 
-              onClick={() => setSelectedCrop(null)} 
-              className="mt-5 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold text-sm transition-colors"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
 const WeatherScreen: React.FC = () => {
   // --- CALCUL DES DATES EN TEMPS RÉEL ---
   const today = new Date();
