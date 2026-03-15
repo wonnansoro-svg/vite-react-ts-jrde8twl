@@ -443,7 +443,7 @@ const ChatScreen: React.FC = () => {
     {
       id: 1,
       sender: 'ia',
-      text: "Bonjour ! Je suis votre système d'aide à la décision Agri-IA. Mes satellites ont terminé l'analyse de vos parcelles à Boundiali. Comment puis-je vous aider aujourd'hui ?"
+      text: "Bonjour ! Je suis votre système d'aide à la décision Agri-IA. Mes satellites ont terminé l'analyse de vos parcelles de korhogo. Comment puis-je vous aider aujourd'hui ?"
     }
   ]);
 
@@ -456,42 +456,25 @@ const ChatScreen: React.FC = () => {
     setMessages((prev) => [...prev, newUserMsg]);
     setInputText('');
 
-    // --- LE NOUVEAU CERVEAU DE L'IA (Vos mots-clés) ---
     setTimeout(() => {
-      // On met le texte en minuscules et on enlève les accents pour faciliter la recherche
       const textLowerCase = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       let aiResponse = "";
 
-      // 1. CHENILLE
       if (textLowerCase.includes('chenille')) {
         aiResponse = "🐛 Alerte parasite : Le risque de prolifération de la chenille légionnaire d'automne est élevé en ce moment. Je recommande une inspection immédiate du cœur des plants de maïs et une pulvérisation de bio-insecticide avant 16h.";
-      } 
-      // 2. PLUIE ou MÉTÉO
-      else if (textLowerCase.includes('pluie') || textLowerCase.includes('meteo')) {
+      } else if (textLowerCase.includes('pluie') || textLowerCase.includes('meteo')) {
         aiResponse = "🌧️ Prévisions météo : De fortes pluies (80%) sont attendues demain. ⚠️ Ne lancez aucune pulvérisation foliaire aujourd'hui pour éviter que le produit ne soit lessivé par l'eau. L'humidité du sol sera cependant excellente.";
-      } 
-      // 3. ANACARDE
-      else if (textLowerCase.includes('anacarde')) {
+      } else if (textLowerCase.includes('anacarde')) {
         aiResponse = "🍂 Analyse Anacarderaie (NDVI: 0.35) : L'imagerie thermique montre un stress hydrique modéré. C'est une période critique pour le développement des noix. Surveillez de près les attaques potentielles de punaises (Helopeltis).";
-      } 
-      // 4. MAÏS
-      else if (textLowerCase.includes('mais')) {
+      } else if (textLowerCase.includes('mais')) {
         aiResponse = "🌽 Parcelle de Maïs (NDVI: 0.78) : La croissance végétative est très bonne ! Attention toutefois, le niveau d'humidité actuel favorise les mauvaises herbes. Un sarclage est recommandé dans les 3 prochains jours pour aérer la culture.";
-      } 
-      // 5. SEMENCE
-      else if (textLowerCase.includes('semence')) {
+      } else if (textLowerCase.includes('semence')) {
         aiResponse = "🌱 Préparation des semis : Les pluies prévues demain vont bien détremper le sol. C'est le moment idéal pour préparer vos semences. Assurez-vous d'utiliser des variétés certifiées à cycle court et résistantes à la sécheresse.";
-      } 
-      // 6. RÉCOLTE
-      else if (textLowerCase.includes('recolte')) {
+      } else if (textLowerCase.includes('recolte')) {
         aiResponse = "🌾 Planification de récolte : D'après l'indice de végétation, votre maïs atteindra la maturité physiologique bientôt. Préparez vos aires de séchage et vos sacs de stockage hermétiques (type PICS) pour éviter les pertes post-récolte.";
-      } 
-      // 7. Salutations générales
-      else if (textLowerCase.includes('bonjour') || textLowerCase.includes('salut')) {
+      } else if (textLowerCase.includes('bonjour') || textLowerCase.includes('salut')) {
         aiResponse = "Bonjour ! J'ai les données météo, l'état de l'anacarde et du maïs à ma disposition. Que souhaitez-vous vérifier en priorité ?";
-      }
-      // Scénario par défaut si aucun mot-clé n'est détecté
-      else {
+      } else {
         aiResponse = "🛰️ C'est noté. J'intègre cette information à mon modèle prédictif. Avez-vous une question spécifique sur la météo, vos semences, ou l'état de vos cultures ?";
       }
 
@@ -507,8 +490,10 @@ const ChatScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md z-10">
+    <div className="flex flex-col h-full bg-gray-50 pb-16"> 
+      {/* J'ai ajouté pb-16 ici pour laisser la place au menu principal */}
+      
+      <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md z-10 shrink-0">
         <div className="relative">
           <MessageSquare className="mr-3" size={24} />
           <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
@@ -522,7 +507,8 @@ const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-grow p-4 overflow-y-auto space-y-4 pb-24">
+      <div className="flex-grow p-4 overflow-y-auto space-y-4">
+        {/* J'ai enlevé le pb-24 qui n'était plus nécessaire */}
         {messages.map((msg) => (
           <div key={msg.id} className={`flex items-start max-w-[90%] ${msg.sender === 'user' ? 'flex-row-reverse self-end ml-auto' : ''}`}>
             <div className={`p-2 rounded-full shadow-sm border flex-shrink-0 ${msg.sender === 'user' ? 'bg-blue-100 border-blue-200 ml-2' : 'bg-green-100 border-green-200 mr-2'}`}>
@@ -535,7 +521,8 @@ const ChatScreen: React.FC = () => {
         ))}
       </div>
 
-      <div className="bg-white p-3 border-t border-gray-200 flex items-center fixed bottom-0 left-0 right-0 z-20">
+      {/* CHANGEMENT MAJEUR ICI : J'ai retiré "fixed bottom-0" et mis "shrink-0" */}
+      <div className="bg-white p-3 border-t border-gray-200 flex items-center shrink-0">
         <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
           <Bug size={20} />
         </button>
@@ -544,12 +531,12 @@ const ChatScreen: React.FC = () => {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Posez votre question (ex: maïs, météo, récolte)..." 
+          placeholder="Posez votre question (ex: météo)..." 
           className="flex-grow bg-gray-100 border-none rounded-full px-4 py-2 mx-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
         />
         <button 
           onClick={handleSendMessage}
-          className="bg-green-600 text-white p-2.5 rounded-full shadow-sm hover:bg-green-700 transition-colors"
+          className="bg-green-600 text-white p-2.5 rounded-full shadow-sm hover:bg-green-700 transition-colors shrink-0"
         >
           <MessageSquare size={18} />
         </button>
