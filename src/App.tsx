@@ -6,6 +6,11 @@ import {
   Phone
 } from 'lucide-react';
 
+//---Ajoutez ceci tout en haut avec vos autres imports pour les cartes Leaflet---
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Polygon
+} from 'react-leaflet';
+
 // --- DÉFINITION DES TYPES TYPESCRIPT ---
 type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
 
@@ -149,22 +154,38 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
         </button>
       </div>
       
-      <div className="relative h-[45%] min-h-[300px] bg-blue-100 flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center"></div>
-        <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+      {/* --- LA VRAIE CARTE INTERACTIVE --- */}
+      <div className="relative h-[45%] min-h-[300px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0">
+        
+        {/* Le conteneur de la carte centré sur Boundiali (Latitude, Longitude) */}
+        <MapContainer 
+          center={[9.5283, -6.4869]} 
+          zoom={16} 
+          style={{ height: '100%', width: '100%', zIndex: 0 }}
+          zoomControl={false} // On cache les boutons + et - pour faire plus "App Mobile"
+        >
+          {/* La couche d'images satellites (gratuite et sans clé API) */}
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution='&copy; Esri'
+          />
+          
+          {/* Le dessin de la parcelle (le polygone vert) avec de vraies coordonnées GPS */}
+          <Polygon 
+            positions={[
+              [9.5285, -6.4875],
+              [9.5295, -6.4865],
+              [9.5282, -6.4855],
+              [9.5275, -6.4870],
+            ]}
+            pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
+          />
+        </MapContainer>
 
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
-          <polygon points="40,90 260,70 330,220 160,280 20,200" fill="rgba(34, 197, 94, 0.25)" stroke="#22c55e" strokeWidth="3" strokeDasharray="5 5" />
-          <circle cx="40" cy="90" r="6" fill="white" stroke="#22c55e" strokeWidth="2" />
-          <circle cx="260" cy="70" r="6" fill="white" stroke="#22c55e" strokeWidth="2" />
-          <circle cx="330" cy="220" r="6" fill="white" stroke="#22c55e" strokeWidth="2" />
-          <circle cx="160" cy="280" r="6" fill="white" stroke="#22c55e" strokeWidth="2" />
-          <circle cx="20" cy="200" r="6" fill="white" stroke="#22c55e" strokeWidth="2" />
-          <rect x="155" y="155" width="65" height="24" rx="12" fill="white" opacity="0.95"/>
-          <text x="187" y="171" fontSize="11" fontWeight="bold" fill="#166534" textAnchor="middle">3.2 ha</text>
-        </svg>
-
-        <div className="absolute bottom-6 left-3 z-10 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3">
+        {/* La petite étiquette flottante avec le score de santé (qui reste par-dessus la carte) */}
+        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none"
+          style={{ zIndex: 1000 }} // Nécessaire pour passer au-dessus de Leaflet
+>
           <div className="bg-green-100 p-2 rounded-full">
             <Leaf className="text-green-600" size={24} />
           </div>
