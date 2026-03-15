@@ -8,7 +8,7 @@ import {
 
 //---Ajoutez ceci tout en haut avec vos autres imports pour les cartes Leaflet---
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Polygon
+import { MapContainer, TileLayer, Polygon, Marker, Popup
 } from 'react-leaflet';
 
 // --- DÉFINITION DES TYPES TYPESCRIPT ---
@@ -170,16 +170,29 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             attribution='&copy; Esri'
           />
           
-          {/* Le dessin de la parcelle (le polygone vert) sur le champ */}
+          {/* Le dessin de la parcelle avec son Popup NDVI */}
           <Polygon 
             positions={[
-              [9.5065, -6.4715], // Point Nord-Ouest
-              [9.5065, -6.4685], // Point Nord-Est
-              [9.5035, -6.4685], // Point Sud-Est
-              [9.5035, -6.4715], // Point Sud-Ouest
+              [9.5065, -6.4715],
+              [9.5065, -6.4685],
+              [9.5035, -6.4685],
+              [9.5035, -6.4715],
             ]}
             pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
-          />
+          >
+            {/* La bulle qui s'affiche quand on clique sur la parcelle */}
+            <Popup>
+              <div className="text-center min-w-[120px]">
+                <h4 className="font-bold text-gray-800 text-sm mb-1">Parcelle Maïs</h4>
+                <div className="bg-green-100 text-green-800 text-xs font-black px-2 py-1.5 rounded border border-green-200 shadow-sm">
+                  NDVI : 0.78
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1 leading-tight">
+                  Végétation dense et saine.<br/>Dernier relevé : Aujourd'hui.
+                </p>
+              </div>
+            </Popup>
+          </Polygon>
         </MapContainer>
 
         {/* La petite étiquette flottante avec le score de santé (qui reste par-dessus la carte) */}
