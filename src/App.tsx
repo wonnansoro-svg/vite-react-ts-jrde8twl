@@ -62,11 +62,11 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ setIsProfileOpen }) => (
     
     <div className="p-4 space-y-5 pb-6">
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
+        <img src="https://www.linkedin.com/in/wonnan-soro-700732143/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3BIQAVee26RBuSJMPmMBsfPw%3D%3D" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
         <div>
-          <h2 className="font-bold text-gray-800 text-lg leading-tight">Amadou T.</h2>
+          <h2 className="font-bold text-gray-800 text-lg leading-tight">SORO Wonnan</h2>
           <p className="text-xs text-gray-500">Culture : Maïs & Anacarde</p>
-          <p className="text-xs text-gray-500 mb-1">Localisation : Boundiali, Savanes</p>
+          <p className="text-xs text-gray-500 mb-1">Localisation : Korhogo, Savanes</p>
           <span className="inline-block bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
             Forfait actuel : Découverte
           </span>
@@ -139,13 +139,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent">
         <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
           <MapPin size={16} className="text-red-400" />
-          <span className="text-white font-bold text-xs shadow-sm">Boundiali, Savanes</span>
+          <span className="text-white font-bold text-xs shadow-sm">Korhogo, Savanes</span>
         </div>
         <button 
           onClick={() => setIsProfileOpen(true)}
           className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center text-green-700 shadow-lg overflow-hidden transition transform hover:scale-105"
         >
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Profil Agriculteur" className="w-full h-full object-cover" />
+          <img src="https://www.linkedin.com/in/wonnan-soro-700732143/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3BIQAVee26RBuSJMPmMBsfPw%3D%3D" alt="Profil Agriculteur" className="w-full h-full object-cover" />
         </button>
       </div>
       
@@ -188,7 +188,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
               onClick={() => setSelectedCrop('Maïs')}
               className="cursor-pointer min-w-[120px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden active:scale-95 transition-transform"
             >
-              <div className="h-20 bg-[url('https://fr.freepik.com/photos-gratuite/mais-tige-pret-etre-recolte-dans-champ_7957173.htm#fromView=keyword&page=1&position=0&uuid=69107b29-abb9-4b53-915a-b4d2f0ada7fb&query=Champ+de+mais')] bg-cover bg-center"></div>
+              <div className="h-20 bg-[url('https://static.lebulletin.com/wp-content/uploads/2017/09/ma%C3%AFs-%C3%A9pi-champ-e1533057090112.jpg')] bg-cover bg-center"></div>
               <div className="p-2 text-center">
                 <p className="font-bold text-gray-800 text-sm">Maïs</p>
                 <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center justify-center">✅ En forme</span>
