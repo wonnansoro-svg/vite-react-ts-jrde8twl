@@ -355,13 +355,13 @@ const WeatherScreen: React.FC = () => {
         
         {/* --- CARTE DU JOUR (Avec la vraie date) --- */}
         <div className="relative bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1625244724120-1fd1d34d00f6?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center opacity-50"></div>
+          <div className="absolute inset-0 bg-[url('https://media.ouest-france.fr/v1/pictures/MjAyMDA1ZjU0YWQ2NGYxMDc4YzhlOWUwYjI5NWZhMTg3ZmRjZjE?width=630&height=354&focuspoint=50%2C25&cropresize=1&client_id=bpeditorial&sign=b7377b1311777aa264aaa8eb76ba5e98adbb7a7daaeaf90934c14a0cb02027be')] bg-cover bg-center opacity-50"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-blue-900/95 to-blue-900/60"></div>
           
           <div className="relative p-5 text-white">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-bold text-xl">Boundiali</h3>
+                <h3 className="font-bold text-xl">Korhogo</h3>
                 {/* Affichage de la date d'aujourd'hui (ex: Lundi 15 Mars) */}
                 <p className="text-sm text-blue-100 font-medium capitalize">{formatDay(today, true)}</p>
               </div>
@@ -398,7 +398,7 @@ const WeatherScreen: React.FC = () => {
         <div className="space-y-3">
           {/* JOUR 1 - Demain avec le vrai jour de la semaine */}
           <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex items-center">
-            <img src="https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=150" alt="Terre mouillée" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
+            <img src="https://previews.123rf.com/images/dvarg/dvarg1207/dvarg120700524/14657591-single-weather-icon-cloud-with-rain-and-lightning.avif" alt="Terre mouillée" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
             <div className="flex-grow">
               <div className="flex justify-between">
                 {/* Affichage dynamique (ex: Mardi) */}
@@ -415,7 +415,7 @@ const WeatherScreen: React.FC = () => {
 
           {/* JOUR 2 - Après-demain avec le vrai jour de la semaine */}
           <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex items-center">
-            <img src="https://images.unsplash.com/photo-1595841696650-6101235b0b2e?auto=format&fit=crop&q=80&w=150" alt="Paysage savane" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
+            <img src="https://static.europe1.fr/var/europe1/storage/styles/image_750_422/public/media/image/2024/11/26/10/la-meteo-du-26-novembre-grisaille-au-nord-ciel-voile-au-sud-le-soleil-joue-les-timides.jpg?itok=2405pYOp" alt="Paysage savane" className="w-16 h-16 rounded-lg object-cover mr-3 border border-gray-100" />
             <div className="flex-grow">
               <div className="flex justify-between">
                 {/* Affichage dynamique (ex: Mercredi) */}
