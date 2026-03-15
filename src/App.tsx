@@ -157,26 +157,26 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
       {/* --- LA VRAIE CARTE INTERACTIVE --- */}
       <div className="relative h-[45%] min-h-[300px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0">
         
-        {/* Le conteneur de la carte centré sur Boundiali (Latitude, Longitude) */}
+        {/* Le conteneur de la carte centré sur la zone agricole */}
         <MapContainer 
-          center={[9.5283, -6.4869]} 
+          center={[9.5050, -6.4700]} // On centre la caméra pile sur le champ
           zoom={16} 
           style={{ height: '100%', width: '100%', zIndex: 0 }}
-          zoomControl={false} // On cache les boutons + et - pour faire plus "App Mobile"
+          zoomControl={false}
         >
-          {/* La couche d'images satellites (gratuite et sans clé API) */}
+          {/* La couche d'images satellites */}
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution='&copy; Esri'
           />
           
-          {/* Le dessin de la parcelle (le polygone vert) avec de vraies coordonnées GPS */}
+          {/* Le dessin de la parcelle (le polygone vert) sur le champ */}
           <Polygon 
             positions={[
-              [9.5285, -6.4875],
-              [9.5295, -6.4865],
-              [9.5282, -6.4855],
-              [9.5275, -6.4870],
+              [9.5065, -6.4715], // Point Nord-Ouest
+              [9.5065, -6.4685], // Point Nord-Est
+              [9.5035, -6.4685], // Point Sud-Est
+              [9.5035, -6.4715], // Point Sud-Ouest
             ]}
             pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4, weight: 3 }}
           />
