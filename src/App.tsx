@@ -255,7 +255,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
             >
               <div className="relative h-28">
                 <img 
-                  src="https://images.unsplash.com/photo-1628183188547-49f3e45dc5f2?auto=format&fit=crop&q=80&w=400" 
+                  src="https://www.aip.ci/wp-content/uploads/2025/02/1001190997.jpg" 
                   alt="Anacarde" 
                   className="w-full h-full object-cover" 
                 />
