@@ -266,43 +266,93 @@ const WeatherScreen: React.FC = () => {
   );
 };
 
-const ChatScreen: React.FC = () => (
-  <div className="flex flex-col h-full bg-[#E5DDD5]">
-    <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md">
-      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-3">
-        <span className="text-2xl">🤖</span>
-      </div>
-      <div>
-        <h2 className="font-bold text-lg leading-tight">Assistant Agri-IA</h2>
-        <span className="text-xs text-green-200">En ligne</span>
-      </div>
-    </div>
-    
-    <div className="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col">
-      <div className="self-end bg-[#DCF8C6] p-3 rounded-lg rounded-tr-none max-w-[80%] shadow-sm border border-green-100">
-        <p className="text-gray-800 text-sm">Pourquoi ma zone nord est rouge sur la carte ?</p>
-        <span className="text-[10px] text-gray-500 block text-right mt-1">10:42</span>
-      </div>
-      <div className="self-start bg-white p-3 rounded-lg rounded-tl-none max-w-[85%] shadow-sm border border-gray-100">
-        <p className="text-gray-800 text-sm mb-2">Bonjour ! J'ai analysé la zone. Le rouge indique un <strong>stress hydrique important</strong> et un début possible d'<strong>Oïdium</strong>.<br/><br/>Voulez-vous voir les traitements recommandés pour cette culture ?</p>
-        <button className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-2 rounded-full font-medium hover:bg-gray-200 transition">
-          <Volume2 size={16} className="mr-2 text-green-600" /> Écouter le message
-        </button>
-        <span className="text-[10px] text-gray-400 block text-right mt-1">10:43</span>
-      </div>
-      <div className="flex space-x-2 pt-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button className="whitespace-nowrap bg-white text-green-700 border border-green-600 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm">Comment traiter ?</button>
-        <button className="whitespace-nowrap bg-white text-green-700 border border-green-600 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm">Scanner une feuille</button>
-      </div>
-    </div>
+const ChatScreen: React.FC = () => {
+  // 1. On crée un état pour stocker la liste des messages
+  const [messages, setMessages] = useState([
+    { id: 1, text: "Pourquoi ma zone nord est rouge sur la carte ?", sender: 'user', time: "10:42" },
+    { id: 2, text: "Bonjour ! J'ai analysé la zone. Le rouge indique un stress hydrique important et un début possible d'Oïdium.", sender: 'bot', time: "10:43" }
+  ]);
+  
+  // 2. On crée un état pour ce que l'utilisateur tape dans le champ texte
+  const [inputValue, setInputValue] = useState('');
 
-    <div className="bg-[#F0F0F0] p-3 flex items-center space-x-2">
-      <button className="p-2 text-gray-500 bg-white rounded-full shadow-sm"><Camera size={20} /></button>
-      <input type="text" placeholder="Écrivez votre question..." className="flex-grow p-2.5 rounded-full border-none shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-      <button className="p-2.5 bg-green-600 text-white rounded-full shadow-sm"><Send size={18} className="ml-0.5" /></button>
+  // 3. La fonction qui s'active quand on clique sur Envoyer
+  const handleSendMessage = () => {
+    if (inputValue.trim() === '') return; // On n'envoie pas de message vide
+
+    // On ajoute le message de l'utilisateur
+    const newUserMsg = { 
+      id: Date.now(), 
+      text: inputValue, 
+      sender: 'user', 
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+    };
+    
+    setMessages(prevMessages => [...prevMessages, newUserMsg]);
+    setInputValue(''); // On vide le champ texte
+
+    // On simule l'IA qui "réfléchit" et répond après 1 seconde
+    setTimeout(() => {
+      const newBotMsg = { 
+        id: Date.now() + 1, 
+        text: "C'est noté. Je mets à jour les recommandations pour cette parcelle. Avez-vous besoin d'un rappel pour le traitement ?", 
+        sender: 'bot', 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      };
+      setMessages(prevMessages => [...prevMessages, newBotMsg]);
+    }, 1000);
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-[#E5DDD5]">
+      <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md">
+        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-3">
+          <span className="text-2xl">🤖</span>
+        </div>
+        <div>
+          <h2 className="font-bold text-lg leading-tight">Assistant Agri-IA</h2>
+          <span className="text-xs text-green-200">En ligne</span>
+        </div>
+      </div>
+      
+      <div className="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col">
+        {/* On affiche dynamiquement tous les messages */}
+        {messages.map((msg) => (
+          <div key={msg.id} className={`p-3 rounded-lg max-w-[85%] shadow-sm border ${
+            msg.sender === 'user' 
+              ? 'self-end bg-[#DCF8C6] rounded-tr-none border-green-100' 
+              : 'self-start bg-white rounded-tl-none border-gray-100'
+          }`}>
+            <p className="text-gray-800 text-sm">{msg.text}</p>
+            <span className={`text-[10px] block mt-1 ${msg.sender === 'user' ? 'text-gray-500 text-right' : 'text-gray-400 text-right'}`}>
+              {msg.time}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-[#F0F0F0] p-3 flex items-center space-x-2">
+        <button className="p-2 text-gray-500 bg-white rounded-full shadow-sm">
+          <Camera size={20} />
+        </button>
+        <input 
+          type="text" 
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Écrivez votre question..." 
+          className="flex-grow p-2.5 rounded-full border-none shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+        />
+        <button 
+          onClick={handleSendMessage}
+          className="p-2.5 bg-green-600 text-white rounded-full shadow-sm hover:bg-green-700"
+        >
+          <Send size={18} className="ml-0.5" />
+        </button> 
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AlertScreen: React.FC = () => (
   <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
