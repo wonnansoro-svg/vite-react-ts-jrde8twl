@@ -438,6 +438,42 @@ const WeatherScreen: React.FC = () => {
 };
 
 const ChatScreen: React.FC = () => {
+  // --- LOGIQUE DU CHAT ---
+  const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: 'ia',
+      text: "Bonjour ! Je suis votre système d'aide à la décision. J'ai terminé l'analyse spectrale de vos parcelles ce matin. Maïs : NDVI 0.78 (Optimal). Anacarde : NDVI 0.35 (Stress hydrique)."
+    }
+  ]);
+
+  const handleSendMessage = () => {
+    if (inputText.trim() === '') return;
+
+    // 1. Ajouter le message de l'agriculteur
+    const newUserMsg = { id: Date.now(), sender: 'user', text: inputText };
+    setMessages((prev) => [...prev, newUserMsg]);
+    setInputText('');
+
+    // 2. Simuler le temps de réflexion de l'IA (1.5 secondes)
+    setTimeout(() => {
+      const newIaMsg = {
+        id: Date.now() + 1,
+        sender: 'ia',
+        text: "🛰️ Analyse croisée terminée. Au vu des données météo de Boundiali et de votre NDVI, je recommande de suspendre les traitements chimiques aujourd'hui. Souhaitez-vous calculer le bilan hydrique exact ?"
+      };
+      setMessages((prev) => [...prev, newIaMsg]);
+    }, 1500);
+  };
+
+  // Permet d'envoyer le message en appuyant sur la touche "Entrée" du clavier
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* --- EN-TÊTE --- */}
@@ -455,70 +491,21 @@ const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* --- ZONE DE MESSAGES --- */}
+      {/* --- ZONE DE MESSAGES (Dynamique) --- */}
       <div className="flex-grow p-4 overflow-y-auto space-y-4 pb-24">
-        
-        <div className="flex items-start max-w-[90%]">
-          <div className="bg-green-100 p-2 rounded-full mr-2 shadow-sm border border-green-200 flex-shrink-0">
-            <Leaf className="text-green-700" size={18} />
-          </div>
-          <div className="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 text-sm text-gray-800">
-            <p>Bonjour ! Je suis votre système d'aide à la décision. J'ai terminé l'analyse spectrale de vos parcelles ce matin.</p>
-            <div className="mt-2 bg-gray-50 p-2 rounded border border-gray-200 text-xs">
-              <strong className="text-green-700 block mb-1">📊 Rapport Express :</strong>
-              • Maïs : NDVI 0.78 (Optimal) mais risque parasitaire imminent.<br/>
-              • Anacarde : NDVI 0.35 (Critique) - Stress hydrique détecté.
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex items-start max-w-[90%] ${msg.sender === 'user' ? 'flex-row-reverse self-end ml-auto' : ''}`}>
+            {/* Icône selon l'expéditeur */}
+            <div className={`p-2 rounded-full shadow-sm border flex-shrink-0 ${msg.sender === 'user' ? 'bg-blue-100 border-blue-200 ml-2' : 'bg-green-100 border-green-200 mr-2'}`}>
+              {msg.sender === 'user' ? <Home className="text-blue-700" size={18} /> : <Leaf className="text-green-700" size={18} />}
+            </div>
+            
+            {/* Bulle de texte */}
+            <div className={`p-3 rounded-2xl shadow-sm border text-sm ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border-gray-100 text-gray-800 rounded-tl-none'}`}>
+              <p className="whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-start flex-row-reverse max-w-[90%] self-end ml-auto">
-          <div className="bg-blue-100 p-2 rounded-full ml-2 shadow-sm border border-blue-200 flex-shrink-0">
-            <Home className="text-blue-700" size={18} />
-          </div>
-          <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-none shadow-sm text-sm text-white">
-            <p>Concentre-toi sur l'alerte du maïs. La météo annonce de fortes pluies demain, comment j'organise mon traitement contre la chenille légionnaire ?</p>
-          </div>
-        </div>
-
-        <div className="flex items-start max-w-[95%]">
-          <div className="bg-green-100 p-2 rounded-full mr-2 shadow-sm border border-green-200 flex-shrink-0 mt-1">
-            <Leaf className="text-green-700" size={18} />
-          </div>
-          <div className="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 text-sm text-gray-800">
-            <p className="mb-2">Excellente question. Le modèle prédictif croisé avec la météo de Boundiali suggère une fenêtre d'action très précise :</p>
-            
-            <ul className="space-y-2 mb-3">
-              <li className="flex items-start text-xs">
-                <span className="text-green-500 mr-2">🎯</span>
-                <span><strong>Action :</strong> Pulvérisation ciblée d'un bio-insecticide (type <em>Bacillus thuringiensis</em>) uniquement sur le foyer Nord-Est de la parcelle.</span>
-              </li>
-              <li className="flex items-start text-xs">
-                <span className="text-green-500 mr-2">⏱️</span>
-                <span><strong>Timing :</strong> Aujourd'hui avant 16h00. Les fortes pluies de demain (80% de probabilité) risquent de lessiver le produit si vous traitez trop tard.</span>
-              </li>
-              <li className="flex items-start text-xs">
-                <span className="text-green-500 mr-2">💧</span>
-                <span><strong>Dosage :</strong> Ajustez le volume de bouillie à 200L/ha compte tenu de la forte hygrométrie actuelle (45%).</span>
-              </li>
-            </ul>
-
-            <p className="text-xs italic text-gray-500 border-t pt-2">Voulez-vous que je calcule la rentabilité économique de ce traitement ou que j'active le drone de pulvérisation ?</p>
-          </div>
-        </div>
-      </div>
-
-      {/* --- SUGGESTIONS DE QUESTIONS --- */}
-      <div className="px-2 pb-2 flex overflow-x-auto space-x-2 no-scrollbar fixed bottom-16 left-0 right-0 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pt-4">
-        <button className="whitespace-nowrap bg-white border border-green-300 text-green-700 text-xs font-medium py-1.5 px-3 rounded-full shadow-sm hover:bg-green-50 flex-shrink-0">
-          Calculer le dosage 🧪
-        </button>
-        <button className="whitespace-nowrap bg-white border border-green-300 text-green-700 text-xs font-medium py-1.5 px-3 rounded-full shadow-sm hover:bg-green-50 flex-shrink-0">
-          Bilan hydrique Anacarde 💧
-        </button>
-        <button className="whitespace-nowrap bg-white border border-green-300 text-green-700 text-xs font-medium py-1.5 px-3 rounded-full shadow-sm hover:bg-green-50 flex-shrink-0">
-          Ouvrir l'imagerie satellite 🛰️
-        </button>
+        ))}
       </div>
 
       {/* --- ZONE DE SAISIE --- */}
@@ -528,10 +515,16 @@ const ChatScreen: React.FC = () => {
         </button>
         <input 
           type="text" 
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Demander une analyse IA..." 
           className="flex-grow bg-gray-100 border-none rounded-full px-4 py-2 mx-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
         />
-        <button className="bg-green-600 text-white p-2.5 rounded-full shadow-sm hover:bg-green-700 transition-colors">
+        <button 
+          onClick={handleSendMessage}
+          className="bg-green-600 text-white p-2.5 rounded-full shadow-sm hover:bg-green-700 transition-colors"
+        >
           <MessageSquare size={18} />
         </button>
       </div>
