@@ -231,12 +231,29 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
 };
 
 const WeatherScreen: React.FC = () => {
+  // 1. Petite fonction magique pour calculer les jours automatiquement en français
+  const getDayName = (offset: number) => {
+    if (offset === 0) return "Aujourd'hui";
+    if (offset === 1) return "Demain";
+    
+    // On prend la date actuelle et on y ajoute le nombre de jours (offset)
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    
+    // On demande à JavaScript de nous donner le nom du jour en français
+    const dayString = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+    
+    // On met la première lettre en majuscule (ex: "mardi" devient "Mardi")
+    return dayString.charAt(0).toUpperCase() + dayString.slice(1);
+  };
+
+  // 2. On met à jour notre liste avec notre fonction getDayName()
   const forecast = [
-    { day: "Aujourd'hui", temp: "32°C", icon: <Sun className="text-orange-500" size={32}/>, action: "PULVÉRISATION OK", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps clair. Bon pour traiter les feuilles." },
-    { day: "Demain", temp: "28°C", icon: <CloudRain className="text-blue-500" size={32}/>, action: "SEMIS CONSEILLÉ", actionColor: "bg-blue-100 text-blue-700 border-blue-500", desc: "Pluie attendue. Le sol sera parfait pour semer." },
-    { day: "Mercredi", temp: "30°C", icon: <Wind className="text-gray-500" size={32}/>, action: "INTERDIT : TRAITEMENT", actionColor: "bg-red-100 text-red-700 border-red-500", desc: "Vents très forts. Les produits vont s'envoler.", badIcon: <Ban size={16} className="mr-1 inline"/> },
-    { day: "Jeudi", temp: "34°C", icon: <ThermometerSun className="text-red-500" size={32}/>, action: "ATTENTION : CHALEUR", actionColor: "bg-orange-100 text-orange-700 border-orange-500", desc: "Ne pas travailler au champ à midi." },
-    { day: "Vendredi", temp: "31°C", icon: <Cloud className="text-gray-400" size={32}/>, action: "RÉCOLTE POSSIBLE", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps nuageux et doux." },
+    { day: getDayName(0), temp: "32°C", icon: <Sun className="text-orange-500" size={32}/>, action: "PULVÉRISATION OK", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps clair. Bon pour traiter les feuilles." },
+    { day: getDayName(1), temp: "28°C", icon: <CloudRain className="text-blue-500" size={32}/>, action: "SEMIS CONSEILLÉ", actionColor: "bg-blue-100 text-blue-700 border-blue-500", desc: "Pluie attendue. Le sol sera parfait pour semer." },
+    { day: getDayName(2), temp: "30°C", icon: <Wind className="text-gray-500" size={32}/>, action: "INTERDIT : TRAITEMENT", actionColor: "bg-red-100 text-red-700 border-red-500", desc: "Vents très forts. Les produits vont s'envoler.", badIcon: <Ban size={16} className="mr-1 inline"/> },
+    { day: getDayName(3), temp: "34°C", icon: <ThermometerSun className="text-red-500" size={32}/>, action: "ATTENTION : CHALEUR", actionColor: "bg-orange-100 text-orange-700 border-orange-500", desc: "Ne pas travailler au champ à midi." },
+    { day: getDayName(4), temp: "31°C", icon: <Cloud className="text-gray-400" size={32}/>, action: "RÉCOLTE POSSIBLE", actionColor: "bg-green-100 text-green-700 border-green-500", desc: "Temps nuageux et doux." },
   ];
 
   return (
