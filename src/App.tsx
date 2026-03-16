@@ -368,7 +368,7 @@ const WeatherScreen: React.FC = () => {
     },
     { 
       id: 4, day: "Jeudi", 
-      weatherImg: "https://images.unsplash.com/photo-1622278647429-71bc2059079d?auto=format&fit=crop&q=80&w=400", 
+      weatherImg: "https://img.freepik.com/photos-gratuite/beau-paysage-ciel-bleu_23-2151906820.jpg?semt=ais_rp_progressive&w=740&q=80", 
       temp: "34°", wind: "10 km/h", Icon: Sun,
       actionImg: "https://img.freepik.com/photos-gratuite/recolte-du-riz-au-sri-lanka_23-2151940459.jpg?semt=ais_hybrid&w=740&q=80", 
       actionType: "harvest" 
