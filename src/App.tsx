@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Camera, Volume2, PhoneCall, 
   AlertTriangle, Send, Sun, Cloud, ThermometerSun, Bug, Leaf, 
-  ZoomIn, ZoomOut, Layers, Ban, MapPin, CheckCircle, Edit3, ArrowLeft, Droplets, Wind, Phone,
+  ZoomIn, ZoomOut, Layers, Ban, MapPin, Edit3, ArrowLeft, Droplets, Wind, Phone,
   MessageSquare, TrendingUp,
-  Map, Grid, Calendar, CloudLightning
+  Map, Grid, Calendar, CloudLightning, 
+  CheckCircle, XCircle 
 } from 'lucide-react';
 
 //---Ajoutez ceci tout en haut avec vos autres imports pour les cartes Leaflet---
@@ -37,9 +38,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, setIsPro
   <div className="bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-4 text-[10px] text-gray-500">
     <button onClick={() => {setActiveTab('dashboard'); setIsProfileOpen(false);}} className={`flex flex-col items-center ${activeTab === 'dashboard' ? 'text-green-600 font-bold' : ''}`}>
       <Home size={20} className="mb-1" />
-      Dashboard
+      Accueil
     </button>
-    <button onClick={() => {setActiveTab('weather'); setIsProfileOpen(false);}} className={`flex flex-col items-center ${activeTab === 'weather' ? 'text-green-600 font-bold' : ''}`}>
+    <button onClick={() => {setActiveTab('weather'); setIsProfilegitOpen(false);}} className={`flex flex-col items-center ${activeTab === 'weather' ? 'text-green-600 font-bold' : ''}`}>
       <CloudRain size={20} className="mb-1" />
       Météo
     </button>
@@ -342,116 +343,120 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
 };
 
 const WeatherScreen: React.FC = () => {
-  // Base de données des prévisions de la semaine avec des images très parlantes
-  const weeklyForecast = [
-    { id: 1, day: "Aujourd'hui", desc: "Pluies attendues", temp: "28°", icon: <CloudRain size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=600", color: "from-blue-900/80 to-blue-600/80" },
-    { id: 2, day: "Mardi", desc: "Grand Soleil", temp: "34°", icon: <Sun size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1547623641-82fbb83476e9?auto=format&fit=crop&q=80&w=600", color: "from-orange-900/80 to-orange-500/80" },
-    { id: 3, day: "Mercredi", desc: "Nuageux", temp: "31°", icon: <Cloud size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=600", color: "from-gray-800/80 to-gray-500/80" },
-    { id: 4, day: "Jeudi", desc: "Risque d'Averses", temp: "29°", icon: <CloudRain size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&q=80&w=600", color: "from-blue-800/80 to-blue-500/80" },
-    { id: 5, day: "Vendredi", desc: "Très Chaud & Sec", temp: "36°", icon: <ThermometerSun size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1504370805625-d32c54b16100?auto=format&fit=crop&q=80&w=600", color: "from-red-900/80 to-red-600/80" },
-    { id: 6, day: "Samedi", desc: "Éclaircies", temp: "32°", icon: <Sun size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=600", color: "from-yellow-900/80 to-yellow-600/80" },
-    { id: 7, day: "Dimanche", desc: "Orages Violents", temp: "27°", icon: <CloudLightning size={28} className="text-white"/>, img: "https://images.unsplash.com/photo-1605727216801-e27ce1d0ce3c?auto=format&fit=crop&q=80&w=600", color: "from-purple-900/80 to-purple-600/80" },
+  // Base de données 100% visuelle
+  // actionType: 'spray_no', 'spray_yes', 'sowing', 'harvest'
+  const visualForecast = [
+    { 
+      id: 1, day: "Aujourd'hui", 
+      weatherImg: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=400", // Vraie photo de pluie
+      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", // Tracteur/Pulvérisateur
+      actionType: "spray_no" 
+    },
+    { 
+      id: 2, day: "Demain", 
+      weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?auto=format&fit=crop&q=80&w=400", // Ciel voilé / humide
+      actionImg: "https://images.unsplash.com/photo-1592982537447-6f23f5b02660?auto=format&fit=crop&q=80&w=400", // Graines dans la main
+      actionType: "sowing" 
+    },
+    { 
+      id: 3, day: "Mercredi", 
+      weatherImg: "https://images.unsplash.com/photo-1534088568595-a066f410cbda?auto=format&fit=crop&q=80&w=400", // Ciel nuageux (idéal traitement)
+      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", // Tracteur/Pulvérisateur
+      actionType: "spray_yes" 
+    },
+    { 
+      id: 4, day: "Jeudi", 
+      weatherImg: "https://images.unsplash.com/photo-1622278647429-71bc2059079d?auto=format&fit=crop&q=80&w=400", // Grand soleil
+      actionImg: "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&q=80&w=400", // Récolte / Champs mûr
+      actionType: "harvest" 
+    },
+    { 
+      id: 5, day: "Vendredi", 
+      weatherImg: "https://images.unsplash.com/photo-1605727216801-e27ce1d0ce3c?auto=format&fit=crop&q=80&w=400", // Orage menaçant
+      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", // Pulvérisateur
+      actionType: "spray_no" 
+    },
   ];
 
   return (
     <div className="flex flex-col h-full bg-gray-100 overflow-y-auto pb-24">
       
-      {/* --- EN-TÊTE MÉTÉO VISUEL --- */}
-      <div className="relative pt-6 pb-10 px-6 rounded-b-[40px] shadow-lg shrink-0 overflow-hidden">
-        {/* Image de fond principale (Paysage agricole) */}
-        <img 
-          src="https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?auto=format&fit=crop&q=80&w=800" 
-          alt="Champ" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Dégradé sombre pour bien lire le texte */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80"></div>
-
-        <div className="relative z-10">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/30">
-              <MapPin size={16} className="mr-1.5 text-white" />
-              <span className="text-sm font-bold tracking-wide text-white">Korhogo</span>
-            </div>
-            <div className="bg-red-500/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md flex items-center shadow-lg animate-pulse">
-              <CloudRain size={12} className="mr-1" /> Pluie à 16h
-            </div>
+      {/* --- EN-TÊTE SIMPLIFIÉ --- */}
+      <div className="bg-white p-4 shadow-sm border-b border-gray-200 shrink-0 flex items-center justify-between">
+         <h1 className="text-xl font-black text-gray-800">Météo & Actions</h1>
+         <div className="flex items-center bg-gray-100 px-3 py-1.5 rounded-full">
+            <MapPin size={16} className="mr-1.5 text-green-600" />
+            <span className="text-sm font-bold text-gray-700">Boundiali</span>
           </div>
-
-          <div className="flex items-end justify-between mt-8">
-            <div>
-              <h1 className="text-7xl font-black text-white drop-shadow-lg leading-none">28°</h1>
-              <p className="text-xl font-bold text-blue-200 mt-2 capitalize drop-shadow-md">Averses isolées</p>
-            </div>
-            <CloudRain size={80} className="text-white drop-shadow-lg opacity-90" strokeWidth={1.5} />
-          </div>
-        </div>
       </div>
 
-      <div className="px-5 -mt-6 relative z-20 shrink-0">
-        {/* --- INDICATEURS AGRICOLES (Cartes plus claires) --- */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 grid grid-cols-2 gap-3">
-          
-          <div className="bg-blue-50/50 rounded-xl p-3 flex items-center border border-blue-100">
-            <Wind size={24} className="text-blue-500 mr-3" />
-            <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase">Vent</p>
-              <p className="text-sm font-black text-gray-800">12 km/h</p>
-            </div>
-          </div>
-
-          <div className="bg-orange-50/50 rounded-xl p-3 flex items-center border border-orange-100">
-            <Droplets size={24} className="text-orange-500 mr-3" />
-            <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase">Humidité Sol</p>
-              <p className="text-sm font-black text-gray-800">42%</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* --- PRÉVISIONS DE LA SEMAINE (100% VISUELLES) --- */}
-      <div className="mt-8 px-5 shrink-0">
-        <h2 className="text-lg font-black text-gray-800 mb-4 flex items-center">
-          <Calendar size={20} className="mr-2 text-green-600" /> Prévisions 7 jours
-        </h2>
+      {/* --- LISTE DES JOURS (100% VISUELLE) --- */}
+      <div className="p-4 space-y-4 shrink-0">
         
-        <div className="space-y-3">
-          {weeklyForecast.map((day) => (
-            <div key={day.id} className="relative rounded-2xl overflow-hidden shadow-sm border border-gray-200 h-20 group">
-              {/* Image de fond de la météo */}
-              <img 
-                src={day.img} 
-                alt={day.desc} 
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-              />
-              {/* Dégradé de couleur par-dessus l'image */}
-              <div className={`absolute inset-0 bg-gradient-to-r ${day.color}`}></div>
+        {/* Légende visuelle rapide */}
+        <div className="flex justify-around bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-2">
+           <div className="flex flex-col items-center"><CheckCircle className="text-green-500 mb-1" size={24}/> <span className="text-[10px] font-bold">OUI</span></div>
+           <div className="flex flex-col items-center"><XCircle className="text-red-500 mb-1" size={24}/> <span className="text-[10px] font-bold">NON</span></div>
+        </div>
+
+        {visualForecast.map((day) => (
+          <div key={day.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 flex flex-col">
+            
+            {/* Petit bandeau pour le jour (pour ceux qui lisent un peu) */}
+            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm">
+              {day.day}
+            </div>
+
+            {/* Zone des images : 50% Météo / 50% Action */}
+            <div className="flex h-32">
               
-              {/* Contenu de la carte */}
-              <div className="relative z-10 flex items-center justify-between h-full px-4">
-                <div className="flex items-center">
-                  <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm mr-4 border border-white/30 shadow-inner">
-                    {day.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-base leading-tight drop-shadow-md">{day.day}</h3>
-                    <p className="text-white/80 text-xs font-medium drop-shadow-md">{day.desc}</p>
-                  </div>
-                </div>
-                <div className="text-3xl font-black text-white drop-shadow-lg">
-                  {day.temp}
+              {/* GAUCHE : LA MÉTÉO */}
+              <div className="w-1/2 relative border-r-4 border-white">
+                <img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" />
+                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm p-1.5 rounded-lg">
+                  <CloudRain className="text-white" size={20} />
                 </div>
               </div>
+
+              {/* DROITE : L'ACTION RECOMMANDÉE */}
+              <div className="w-1/2 relative">
+                <img src={day.actionImg} alt="Action" className="w-full h-full object-cover" />
+                
+                {/* Superposition de l'icône de validation selon l'action */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  {day.actionType === 'spray_no' && (
+                    <div className="bg-white rounded-full p-1 animate-pulse">
+                      <XCircle size={60} className="text-red-600 drop-shadow-xl" strokeWidth={2.5} />
+                    </div>
+                  )}
+                  {day.actionType === 'spray_yes' && (
+                    <div className="bg-white rounded-full p-1">
+                      <CheckCircle size={60} className="text-green-500 drop-shadow-xl" strokeWidth={2.5} />
+                    </div>
+                  )}
+                  {day.actionType === 'sowing' && (
+                    <div className="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-xl font-black text-green-800 border-2 border-green-500 shadow-lg transform -rotate-12">
+                      SEMER
+                    </div>
+                  )}
+                  {day.actionType === 'harvest' && (
+                    <div className="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-xl font-black text-orange-800 border-2 border-orange-500 shadow-lg transform -rotate-12">
+                      RÉCOLTER
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
     </div>
   );
 };
+
+
 const ChatScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([
