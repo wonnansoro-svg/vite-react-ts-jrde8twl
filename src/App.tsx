@@ -67,7 +67,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ setIsProfileOpen }) => (
     
     <div className="p-4 space-y-5 pb-6">
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-        <img src="https://www.linkedin.com/in/wonnan-soro-700732143/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3BIQAVee26RBuSJMPmMBsfPw%3D%3D" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
+        <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg?semt=ais_hybrid&w=740&q=80" alt="Profil Agriculteur" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" />
         <div>
           <h2 className="font-bold text-gray-800 text-lg leading-tight">SORO Wonnan</h2>
           <p className="text-xs text-gray-500">Culture : Maïs & Anacarde</p>
@@ -151,7 +151,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
           onClick={() => setIsProfileOpen(true)}
           className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center text-green-700 shadow-lg overflow-hidden transition transform hover:scale-105 pointer-events-auto"
         >
-          <img src="https://www.linkedin.com/in/wonnan-soro-700732143/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3BIQAVee26RBuSJMPmMBsfPw%3D%3D" alt="Profil" className="w-full h-full object-cover" />
+          <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg?semt=ais_hybrid&w=740&q=80" alt="Profil" className="w-full h-full object-cover" />
         </button>
       </div>
       
