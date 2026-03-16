@@ -349,49 +349,49 @@ const WeatherScreen: React.FC = () => {
       id: 1, day: "Aujourd'hui", 
       weatherImg: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=400", 
       temp: "28°", wind: "12 km/h", Icon: CloudRain,
-      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", 
       actionType: "spray_no" 
     },
     { 
       id: 2, day: "Demain", 
       weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?auto=format&fit=crop&q=80&w=400", 
       temp: "30°", wind: "8 km/h", Icon: Cloud,
-      actionImg: "https://images.unsplash.com/photo-1592982537447-6f23f5b02660?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg", 
       actionType: "sowing" 
     },
     { 
       id: 3, day: "Mercredi", 
       weatherImg: "https://images.unsplash.com/photo-1534088568595-a066f410cbda?auto=format&fit=crop&q=80&w=400", 
       temp: "32°", wind: "5 km/h", Icon: Cloud,
-      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", 
       actionType: "spray_yes" 
     },
     { 
       id: 4, day: "Jeudi", 
       weatherImg: "https://images.unsplash.com/photo-1622278647429-71bc2059079d?auto=format&fit=crop&q=80&w=400", 
       temp: "34°", wind: "10 km/h", Icon: Sun,
-      actionImg: "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://img.freepik.com/photos-gratuite/recolte-du-riz-au-sri-lanka_23-2151940459.jpg?semt=ais_hybrid&w=740&q=80", 
       actionType: "harvest" 
     },
     { 
       id: 5, day: "Vendredi", 
       weatherImg: "https://images.unsplash.com/photo-1605727216801-e27ce1d0ce3c?auto=format&fit=crop&q=80&w=400", 
       temp: "33°", wind: "25 km/h", Icon: CloudLightning,
-      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://img.freepik.com/photos-gratuite/labourer-tracteur-lourd-pendant-culture-agriculture-travaille-au-champ-charrue_268835-915.jpg?semt=ais_rp_progressive&w=740&q=80", 
       actionType: "spray_no" 
     },
     { 
       id: 6, day: "Samedi", 
       weatherImg: "https://images.unsplash.com/photo-1595841696650-6101235b0b2e?auto=format&fit=crop&q=80&w=400", 
       temp: "31°", wind: "14 km/h", Icon: Sun,
-      actionImg: "https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", 
       actionType: "spray_yes" 
     },
     { 
       id: 7, day: "Dimanche", 
       weatherImg: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=400", 
       temp: "29°", wind: "18 km/h", Icon: CloudRain,
-      actionImg: "https://images.unsplash.com/photo-1592982537447-6f23f5b02660?auto=format&fit=crop&q=80&w=400", 
+      actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", 
       actionType: "sowing" 
     },
   ];
