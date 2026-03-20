@@ -348,7 +348,148 @@ const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoa
 };
 
 // ... [Composants ChatScreen et AlertScreen identiques à votre version originale] ...
-const ChatScreen: React.FC = () => { /* Gardez votre code original ici pour la concision */ return <div className="flex flex-col h-full bg-gray-50 pb-16"><div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md z-10 shrink-0"><MessageSquare className="mr-3" size={24} /><h2 className="font-bold text-lg">Agri-IA Expert</h2></div><div className="flex-grow flex items-center justify-center p-4"><p className="text-center text-gray-500">Connectez l'API OpenAI ici pour la phase 2.</p></div></div>; };
+// --- ÉCRAN 3 : L'IA CHATBOT (Connecté à l'API) ---
+
+const ChatScreen: React.FC = () => {
+  // Historique des messages
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: "Bonjour ! Je suis SAIDA, votre expert agricole. Que se passe-t-il dans votre champ de maïs ou d'anacarde aujourd'hui ?" }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Pour scroller automatiquement vers le bas quand un message arrive
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input;
+    setInput(''); // On vide le champ de texte
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setIsLoading(true);
+
+    try {
+      // ⚠️ ATTENTION : Pour le pitch, mettez votre clé API ici. 
+      // Après le pitch, il faudra utiliser un fichier .env pour sécuriser la clé !
+      const API_KEY = "MAUVAIS CLE API POUR LE PITCH - UTILISEZ UN .ENV EN PRODUCTION !"; 
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo", // Modèle rapide et peu coûteux
+          messages: [
+            // Le "Cerveau" de SAIDA : on lui donne son rôle
+            { 
+              role: "system", 
+              content: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Tu dois donner des réponses TRÈS COURTES (2 ou 3 phrases maximum). Utilise des mots simples. Tes spécialités sont le maïs, l'anacarde, la météo et la lutte contre la chenille légionnaire." 
+            },
+            // On envoie l'historique de la conversation pour qu'elle ait le contexte
+            ...messages.map(m => ({ role: m.role, content: m.content })),
+            // On ajoute la nouvelle question de l'utilisateur
+            { role: "user", content: userMessage }
+          ],
+          temperature: 0.7 // Rend les réponses un peu plus naturelles
+        })
+      });
+
+      if (!response.ok) throw new Error("Erreur API");
+
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content;
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
+
+    } catch (error) {
+      console.error("Erreur de l'IA:", error);
+      setMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: "Désolé, ma connexion réseau est un peu faible. Pouvez-vous répéter votre question ?" 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50 pb-16">
+      
+      {/* En-tête */}
+      <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md z-10 shrink-0">
+        <MessageSquare className="mr-3" size={24} />
+        <div>
+          <h2 className="font-bold text-lg leading-tight">Agri-IA Expert</h2>
+          <span className="text-[10px] text-green-200 flex items-center">
+            <span className="w-2 h-2 rounded-full bg-green-400 mr-1 animate-pulse"></span> En ligne
+          </span>
+        </div>
+      </div>
+
+      {/* Zone des messages */}
+      <div className="flex-grow p-4 overflow-y-auto space-y-4">
+        {messages.map((msg, index) => (
+          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm text-sm ${
+              msg.role === 'user' 
+                ? 'bg-green-600 text-white rounded-tr-none' 
+                : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+            }`}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        
+        {/* Animation de chargement quand l'IA "réfléchit" */}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex space-x-2 items-center">
+              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Zone de saisie */}
+      <div className="bg-white p-3 border-t border-gray-200 shrink-0 flex items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
+          <Camera size={24} />
+        </button>
+        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors mr-2">
+          <Volume2 size={24} />
+        </button>
+        
+        <input 
+          type="text" 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Posez votre question..." 
+          className="flex-grow bg-gray-100 text-sm rounded-full px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500"
+        />
+        
+        <button 
+          onClick={handleSendMessage}
+          disabled={!input.trim() || isLoading}
+          className={`ml-2 p-2.5 rounded-full flex items-center justify-center transition-colors ${
+            input.trim() && !isLoading ? 'bg-green-600 text-white shadow-md hover:bg-green-700' : 'bg-gray-200 text-gray-400'
+          }`}
+        >
+          <Send size={18} className="ml-0.5" />
+        </button>
+      </div>
+    </div>
+  );
+};
 const AlertScreen: React.FC = () => { /* Gardez votre code original ici */ return <div className="flex flex-col h-full bg-gray-50 overflow-y-auto"><div className="bg-red-600 text-white p-4 pt-6 flex items-center shadow-md"><AlertTriangle className="mr-2 animate-pulse" size={24} /><h2 className="font-bold text-lg">Alerte Critique</h2></div><div className="p-4 flex flex-col items-center justify-center mt-10"><AlertTriangle size={64} className="text-red-500 mb-4" /><h3 className="text-xl font-bold text-gray-800">Chenille Légionnaire</h3><p className="text-center text-gray-600 mt-2 mb-6">Détection confirmée. Traitement urgent requis.</p><a href="tel:+2250778014537" className="w-full flex items-center justify-center bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md"><Phone className="mr-2" size={20} /> APPELER LE TECHNICIEN</a></div></div>; };
 
 
