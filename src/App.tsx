@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Camera, Volume2, PhoneCall, 
@@ -20,6 +21,7 @@ interface LocationState {
 }
 
 interface DailyWeather {
+  ttsText?: string;
   id: number;
   day: string;
   weatherImg: string;
@@ -55,41 +57,47 @@ interface WeatherScreenProps {
 
 // --- FONCTIONS UTILITAIRES POUR LA MÉTÉO VISUELLE ---
 // Transforme les codes météo bruts de l'API en notre logique 100% visuelle (Images + Actions)
+// --- FONCTIONS UTILITAIRES POUR LA MÉTÉO VISUELLE & VOCALE ---
 const getWeatherVisuals = (code: number) => {
-  if (code === 0 || code === 1) { // Dégagé ou presque
+  if (code === 0 || code === 1) { 
       return {
           weatherImg: "https://img.freepik.com/photos-gratuite/beau-paysage-ciel-bleu_23-2151906820.jpg?semt=ais_rp_progressive&w=740&q=80",
           Icon: Sun,
           actionImg: "https://img.freepik.com/photos-gratuite/recolte-du-riz-au-sri-lanka_23-2151940459.jpg?semt=ais_hybrid&w=740&q=80",
-          actionType: "harvest"
+          actionType: "harvest",
+          ttsText: "Ciel dégagé et très ensoleillé. C'est le moment idéal pour récolter vos cultures."
       };
-  } else if (code === 2 || code === 3) { // Nuageux
+  } else if (code === 2 || code === 3) { 
       return {
           weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?auto=format&fit=crop&q=80&w=400",
           Icon: Cloud,
           actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg",
-          actionType: "sowing"
+          actionType: "sowing",
+          ttsText: "Ciel nuageux avec une bonne humidité. Les conditions sont parfaites pour semer."
       };
-  } else if (code >= 50 && code <= 67) { // Pluie et averses
+  } else if (code >= 50 && code <= 67) { 
       return {
           weatherImg: "https://img.freepik.com/vecteurs-libre/parapluie-rouge-sous-pluie_1284-11413.jpg?semt=ais_hybrid&w=740&q=80",
           Icon: CloudRain,
           actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s",
-          actionType: "spray_no"
+          actionType: "spray_no",
+          ttsText: "Attention, pluie prévue. Il est strictement interdit de pulvériser des produits aujourd'hui, ils seraient lavés par l'eau."
       };
-  } else if (code >= 80) { // Orages et pluies intenses
+  } else if (code >= 80) { 
       return {
           weatherImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIMzaqG-lwT8wszF3lRYHXvVgI7FWrkEG3ng&s",
           Icon: CloudLightning,
           actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s",
-          actionType: "spray_no"
+          actionType: "spray_no",
+          ttsText: "Alerte météo. Risque d'orages violents. Restez à l'abri et ne faites aucun traitement sur vos parcelles."
       };
   }
-  return { // Par défaut
+  return { 
       weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?auto=format&fit=crop&q=80&w=400",
       Icon: Cloud,
       actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg",
-      actionType: "sowing"
+      actionType: "sowing",
+          ttsText: "Temps clément. Vous pouvez continuer vos activités agricoles normalement."
   };
 };
 
@@ -237,7 +245,33 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ isProfileOpen, setIsP
 
 // --- ÉCRAN 2 : MÉTÉO (Dynamique grâce aux props) ---
 
+// --- ÉCRAN 2 : MÉTÉO (Dynamique + VOCAL) ---
+
 const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoading }) => {
+  const [speakingId, setSpeakingId] = useState<number | null>(null);
+
+  // Fonction magique de synthèse vocale (Text-to-Speech)
+  const speak = (id: number, dayName: string, text: string, temp: string) => {
+    if ('speechSynthesis' in window) {
+      // Coupe la voix précédente si l'utilisateur clique plusieurs fois
+      window.speechSynthesis.cancel();
+
+      const fullText = `Prévisions pour ${dayName} à ${location.city}. Température maximum de ${temp}. ${text}`;
+      
+      const utterance = new SpeechSynthesisUtterance(fullText);
+      utterance.lang = 'fr-FR'; // Voix en Français
+      utterance.rate = 0.9; // Vitesse légèrement ralentie pour être bien comprise
+
+      utterance.onstart = () => setSpeakingId(id);
+      utterance.onend = () => setSpeakingId(null);
+      utterance.onerror = () => setSpeakingId(null);
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Votre navigateur ne supporte pas la lecture vocale.");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full bg-gray-100 items-center justify-center pb-24">
@@ -265,8 +299,24 @@ const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoa
         </div>
 
         {forecast.map((day) => (
-          <div key={day.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 flex flex-col">
-            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm tracking-wide">{day.day}</div>
+          <div key={day.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 flex flex-col relative">
+            
+            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm tracking-wide flex justify-center items-center">
+              {day.day}
+            </div>
+
+            {/* BOUTON VOCAL MAGIQUE */}
+            <button 
+              onClick={() => speak(day.id, day.day, day.ttsText || "", day.temp)}
+              className={`absolute top-10 right-2 z-50 p-2 rounded-full shadow-lg transition-all duration-300 ${
+                speakingId === day.id 
+                  ? 'bg-green-500 text-white animate-pulse scale-110' 
+                  : 'bg-white/80 text-green-700 backdrop-blur-md hover:bg-white'
+              }`}
+            >
+              <Volume2 size={24} className={speakingId === day.id ? "animate-bounce" : ""} />
+            </button>
+
             <div className="flex h-36">
               <div className="w-1/2 relative border-r-2 border-white">
                 <img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" />
@@ -353,10 +403,10 @@ export default function App() {
         
         const visuals = getWeatherVisuals(code);
         
-        const dateObj = new Date(date);
-        const dayName = index === 0 ? "Aujourd'hui" : index === 1 ? "Demain" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
+           const dateObj = new Date(date);
+           const dayName = index === 0 ? "Aujourd'hui" : index === 1 ? "Demain" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
 
-        return {
+           return {
           id: index,
           day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
           temp: `${temp}°`,
