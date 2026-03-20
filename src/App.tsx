@@ -392,8 +392,10 @@ const ChatScreen: React.FC = () => {
       // On ajoute la nouvelle question
       geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
 
-      // Appel direct à l'API Google Gemini (modèle 1.5 Flash, ultra rapide)
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+      // Appel direct à l'API Google Gemini (modèle 2.5 Flash, ultra rapide)
+     
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+      
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
