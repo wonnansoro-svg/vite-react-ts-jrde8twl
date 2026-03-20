@@ -364,54 +364,65 @@ const ChatScreen: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async () => {
+ const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = input;
-    setInput(''); // On vide le champ de texte
+    setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
     try {
-      // ⚠️ ATTENTION : Pour le pitch, mettez votre clé API ici. 
-      // Après le pitch, il faudra utiliser un fichier .env pour sécuriser la clé !
-      const API_KEY = "cleyia"; 
+      // On récupère la clé Gemini depuis l'environnement
+      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      if (!API_KEY) {
+        console.error("Clé API Gemini manquante !");
+        setMessages((prev) => [...prev, { role: 'assistant', content: "Désolé, ma connexion à l'IA Gemini n'est pas configurée." }]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Gemini utilise "model" au lieu de "assistant" pour l'historique
+      const geminiHistory = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+      
+      // On ajoute la nouvelle question
+      geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      // Appel direct à l'API Google Gemini (modèle 1.5 Flash, ultra rapide)
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo", // Modèle rapide et peu coûteux
-          messages: [
-            // Le "Cerveau" de SAIDA : on lui donne son rôle
-            { 
-              role: "system", 
-              content: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Tu dois donner des réponses TRÈS COURTES (2 ou 3 phrases maximum). Utilise des mots simples. Tes spécialités sont le maïs, l'anacarde, la météo et la lutte contre la chenille légionnaire." 
-            },
-            // On envoie l'historique de la conversation pour qu'elle ait le contexte
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-            // On ajoute la nouvelle question de l'utilisateur
-            { role: "user", content: userMessage }
-          ],
-          temperature: 0.7 // Rend les réponses un peu plus naturelles
+          systemInstruction: {
+            parts: [{ text: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Tu dois donner des réponses TRÈS COURTES (2 ou 3 phrases maximum). Utilise des mots simples. Tes spécialités sont le maïs, l'anacarde, la météo et la lutte contre la chenille légionnaire." }]
+          },
+          contents: geminiHistory,
+          generationConfig: {
+            temperature: 0.7
+          }
         })
       });
 
-      if (!response.ok) throw new Error("Erreur API");
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
+      }
 
       const data = await response.json();
-      const aiResponse = data.choices[0].message.content;
+      
+      // On extrait la réponse du format spécifique de Gemini
+      const aiResponse = data.candidates[0].content.parts[0].text;
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
     } catch (error) {
-      console.error("Erreur de l'IA:", error);
+      console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: "Désolé, ma connexion réseau est un peu faible. Pouvez-vous répéter votre question ?" 
+        content: "Désolé, j'ai eu un problème de réseau. Pouvez-vous répéter votre question ?" 
       }]);
     } finally {
       setIsLoading(false);
