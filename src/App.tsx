@@ -375,7 +375,7 @@ const ChatScreen: React.FC = () => {
     try {
       // ⚠️ ATTENTION : Pour le pitch, mettez votre clé API ici. 
       // Après le pitch, il faudra utiliser un fichier .env pour sécuriser la clé !
-      const API_KEY = "MAUVAIS CLE API POUR LE PITCH - UTILISEZ UN .ENV EN PRODUCTION !"; 
+      const API_KEY = "cleyia"; 
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
