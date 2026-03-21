@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Volume2, 
   AlertTriangle, Send, Sun, Cloud, Bug, Leaf, 
-  MapPin, ArrowLeft, Wind, CloudLightning, 
+  MapPin, ArrowLeft, Wind, CloudLightning, RefreshCcw,Locate,
   CheckCircle, XCircle, Loader2
 } from 'lucide-react';
 
@@ -99,72 +99,117 @@ const AlertScreen: React.FC = () => (
 );
 
 // --- 4. ÉCRAN DASHBOARD ---
-// --- 4. ÉCRAN DASHBOARD ---
+// --- 4. ÉCRAN DASHBOARD (Avec bouton de mise à jour GPS) ---
 const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void, location: LocationState }> = ({ isProfileOpen, setIsProfileOpen, setActiveTab, location }) => {
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
+  
+  // Position GPS de l'utilisateur (qui peut être en déplacement)
+  const [userPos, setUserPos] = useState<[number, number] | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+
+  // Fonction pour forcer la mise à jour du GPS
+  const actualiserGPS = () => {
+    setIsLocating(true);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserPos([position.coords.latitude, position.coords.longitude]);
+          setIsLocating(false);
+        },
+        (error) => {
+          console.error("Erreur GPS:", error);
+          setIsLocating(false);
+        },
+        // Ces options forcent le téléphone à chercher la vraie position satellite sans utiliser la mémoire cache
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } 
+      );
+    } else {
+      setIsLocating(false);
+    }
+  };
+
+  // Au chargement, on cherche la position une première fois
+  useEffect(() => {
+    actualiserGPS();
+  }, []);
+
   if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
+
+  // Coordonnées fixes des parcelles (Elles ne bougent jamais)
+  const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
+  const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
+  const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 pointer-events-none">
-        <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">Localisation : {location.city}</span></div>
-        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
+        <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto">
+          <MapPin size={16} className="text-red-400 animate-bounce" />
+          <span className="text-white font-bold text-xs">Parcelles : {location.city}</span>
+        </div>
+        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto">
+          <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" />
+        </button>
       </div>
       
       <div className="relative h-[45%] min-h-[320px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
-        <MapContainer center={[location.lat, location.lon]} zoom={15} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
+        <MapContainer center={userPos || [location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-          <Polygon positions={[ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ]} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.4 }}><Popup>Parcelle Maïs</Popup></Polygon>
+          
+          {/* Position de l'agriculteur (en bleu) */}
+          {userPos && (
+            <>
+              <Circle center={userPos} radius={2000} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15 }} />
+              <Marker position={userPos}>
+                <Popup>Votre position actuelle</Popup>
+              </Marker>
+            </>
+          )}
+
+          {/* Les 3 Parcelles fixes (Maïs, Coton, Anacarde) */}
+          <Polygon positions={polyMais} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.5 }}><Popup>Parcelle 1 : Maïs</Popup></Polygon>
+          <Polygon positions={polyCoton} pathOptions={{ color: '#e2e8f0', fillColor: '#ffffff', fillOpacity: 0.6 }}><Popup>Parcelle 2 : Coton</Popup></Polygon>
+          <Polygon positions={polyAnacarde} pathOptions={{ color: '#ea580c', fillColor: '#ea580c', fillOpacity: 0.5 }}><Popup>Parcelle 3 : Anacarde</Popup></Polygon>
         </MapContainer>
-        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none" style={{ zIndex: 1000 }}><div className="bg-green-100 p-2 rounded-full"><Leaf className="text-green-600" size={24} /></div><div className="flex flex-col"><p className="text-[10px] text-gray-500 font-bold uppercase leading-none mb-1">Santé Globale</p><p className="text-2xl font-black text-gray-800 leading-none">85%</p></div></div>
+        
+        {/* NOUVEAU : Bouton pour rafraîchir le GPS */}
+        <button 
+          onClick={actualiserGPS}
+          disabled={isLocating}
+          className="absolute bottom-20 right-3 bg-white/95 rounded-full shadow-xl p-3 border-2 border-blue-500 flex items-center justify-center text-blue-600 pointer-events-auto transition-transform active:scale-95" 
+          style={{ zIndex: 1000 }}
+        >
+          {isLocating ? <Loader2 className="animate-spin" size={24} /> : <Locate size={24} />}
+        </button>
+
+        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none" style={{ zIndex: 1000 }}>
+          <div className="bg-green-100 p-2 rounded-full"><Leaf className="text-green-600" size={24} /></div>
+          <div className="flex flex-col"><p className="text-[10px] text-gray-500 font-bold uppercase leading-none mb-1">Santé Globale</p><p className="text-2xl font-black text-gray-800 leading-none">85%</p></div>
+        </div>
       </div>
 
+      {/* Le reste des cartes du tableau de bord */}
       <div className="p-4 pt-6 space-y-6">
         <div>
           <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs ({location.city})</h3>
-          
-          {/* ZONE MODIFIÉE : Le conteneur avec le Maïs, le Coton et l'Anacarde */}
           <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
-            
-            {/* CARTE 1 : MAÏS */}
-            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
-              <div className="relative h-28">
-                <img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" />
-              </div>
-              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 1 - Maïs</h3></div>
-            </div>
-
-            {/* CARTE 2 : COTON */}
-            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
-              <div className="relative h-28">
-                <img src="https://images.unsplash.com/photo-1595085350702-86ee979b9b66?w=400" alt="Coton" className="w-full h-full object-cover" />
-              </div>
-              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 2 - Coton</h3></div>
-            </div>
-
-            {/* CARTE 3 : ANACARDE */}
-            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
-              <div className="relative h-28">
-                <img src="https://images.unsplash.com/photo-1532296068339-4ab529dc3709?w=400" alt="Anacarde" className="w-full h-full object-cover" />
-              </div>
-              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 3 - Anacarde</h3></div>
-            </div>
-
+            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-28"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 1 - Maïs</h3></div></div>
+            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-28"><img src="https://images.unsplash.com/photo-1595085350702-86ee979b9b66?w=400" alt="Coton" className="w-full h-full object-cover" /></div><div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 2 - Coton</h3></div></div>
+            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-28"><img src="https://images.unsplash.com/photo-1532296068339-4ab529dc3709?w=400" alt="Anacarde" className="w-full h-full object-cover" /></div><div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 3 - Anacarde</h3></div></div>
           </div>
         </div>
         
         <div>
-          <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center"><AlertTriangle className="mr-2" size={18} /> Alertes</h3>
-          <div className="bg-white rounded-xl shadow-sm border-l-4 border-red-500 p-3 flex items-center space-x-3"><img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenille" className="w-16 h-16 rounded-lg object-cover" /><div className="flex-grow"><div className="flex justify-between items-start"><h4 className="font-bold text-sm">Chenilles</h4><Bug size={16} className="text-red-500" /></div><button onClick={() => setActiveTab('alert')} className="mt-2 text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded w-full">Voir l'Alerte</button></div></div>
+          <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center"><AlertTriangle className="mr-2" size={18} /> Alertes (Boundiali)</h3>
+          <div className="bg-white rounded-xl shadow-sm border-l-4 border-red-500 p-3 flex items-center space-x-3"><img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenille" className="w-16 h-16 rounded-lg object-cover" /><div className="flex-grow"><div className="flex justify-between items-start"><h4 className="font-bold text-sm">Chenilles sur le Maïs</h4><Bug size={16} className="text-red-500" /></div><button onClick={() => setActiveTab('alert')} className="mt-2 text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded w-full">Voir l'Alerte</button></div></div>
         </div>
       </div>
       
-      {/* Fenêtre pop-up quand on clique sur une parcelle */}
       {selectedCrop && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
           <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
             <h3 className="text-xl font-black mb-3">Détails : {selectedCrop}</h3>
-            <p className="text-gray-600 mb-4">Analyse en cours pour la parcelle de {selectedCrop.toLowerCase()}...</p>
+            <p className="text-gray-600 mb-4">Analyse NDVI et alertes spécifiques pour la parcelle de {selectedCrop.toLowerCase()}...</p>
             <button onClick={() => setSelectedCrop(null)} className="w-full bg-green-100 text-green-800 py-3 rounded-xl font-bold hover:bg-green-200">Fermer</button>
           </div>
         </div>
