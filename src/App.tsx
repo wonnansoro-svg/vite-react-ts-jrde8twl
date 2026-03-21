@@ -405,7 +405,8 @@ const ChatScreen: React.FC = () => {
       ];
 
       // 4. Appel avec "gemini-1.5-flash-latest" qui résout l'erreur 404
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
+      // Remplacez votre ancienne ligne fetch par celle-ci :
+const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
