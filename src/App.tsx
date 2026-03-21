@@ -128,12 +128,22 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
                 <li className="flex items-center"><Check size={14} className="text-yellow-600 mr-1"/> Assistance agronome 24/7</li>
               </ul>
               {currentPlan !== 'premium' && <button onClick={() => setCurrentPlan('premium')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600">Mettre à niveau</button>}
-              {/* Ligne existante pour le Premium : */}
-            {currentPlan === 'premium' && <span className="inline-flex items-center bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"><Crown size={12} className="mr-1" /> Membre Premium</span>}
-            
-            {/* NOUVELLE LIGNE À AJOUTER POUR LA COOPÉRATIVE : */}
-            {currentPlan === 'expert' && <span className="inline-flex items-center bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"><Star size={12} className="mr-1" /> Coopérative Expert</span>}
+              
             </div>
+            //--- abonnement des cooperative---
+            <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'cooperative' ? 'border-green-600 bg-green-50 shadow-md' : 'border-gray-200 bg-white'}`}>
+              {currentPlan === 'cooperative' && <div className="absolute -top-3 right-4 bg-green-600 text-green-900 text-[10px] font-black px-3 py-1 rounded-full uppercase flex items-center"><Star size={12} className="mr-1"/> Actuel</div>}
+              <h4 className="font-black text-gray-800 text-lg flex items-center">Coopérative <Star size={18} className="ml-2 text-green-500"/></h4>
+              <p className="text-2xl font-black text-green-600 my-1">350 000 FCFA <span className="text-sm text-gray-500 font-medium">/ année</span></p>
+              <ul className="text-xs text-gray-700 mt-2 space-y-1 font-medium">
+                <li className="flex items-center"><Check size={14} className="text-green-600 mr-1"/> Accès à tous les outils</li>
+                <li className="flex items-center"><Check size={14} className="text-green-600 mr-1"/> Support prioritaire</li>
+                <li className="flex items-center"><Check size={14} className="text-green-600 mr-1"/> Formation en ligne</li>
+                <li className="flex items-center"><Check size={14} className="text-green-600 mr-1"/> 300 utilisateurs</li>
+              </ul>
+              {currentPlan !== 'cooperative' && <button onClick={() => setCurrentPlan('cooperative')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600">S'abonner</button>}
+            </div>
+
           </div>
         </div>
 
