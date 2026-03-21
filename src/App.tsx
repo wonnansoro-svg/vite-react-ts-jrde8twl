@@ -344,7 +344,7 @@ const ChatScreen: React.FC = () => {
   
   React.useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const handleSendMessage = async () => {
+ const handleSendMessage = async () => {
     if (!input.trim()) return;
     const userMessage = input;
     setInput('');
@@ -354,13 +354,13 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 2. RÉCUPÉRATION DE LA CLÉ API
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+      // 💡 CORRECTION ICI : On utilise "VITE" comme nom de variable
+      const API_KEY = import.meta.env.VITE; 
+      
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
       }
       
-
       // 3. INITIALISATION DE GEMINI
       const genAI = new GoogleGenerativeAI(API_KEY);
       // Utilisation du modèle standard recommandé par Google
@@ -393,7 +393,7 @@ const ChatScreen: React.FC = () => {
       setIsLoading(false); 
     }
   };
-
+  
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
