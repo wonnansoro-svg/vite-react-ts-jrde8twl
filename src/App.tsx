@@ -355,7 +355,7 @@ const ChatScreen: React.FC = () => {
 
     try {
       // 💡 CORRECTION ICI : On utilise "VITE" comme nom de variable
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+     const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY; 
       
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
