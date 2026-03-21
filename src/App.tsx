@@ -563,21 +563,39 @@ export default function App() {
 
   if (!farmLocation) {
     return (
-      <div className="h-[100dvh] w-full bg-green-700 flex flex-col justify-center items-center p-6 text-center relative overflow-hidden">
-        <div className="relative z-10 bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
-          <div className="bg-green-100 w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6"><MapPin size={40} className="text-green-600" /></div>
-          <h1 className="text-2xl font-black text-gray-800 mb-2">Bienvenue sur SAIDA</h1>
-          <p className="text-gray-600 mb-8 text-sm">Pour commencer, nous avons besoin d'enregistrer la position exacte de votre champ principal pour la météo locale.</p>
-          <button onClick={defineFarmLocation} disabled={isLocatingFarm} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-transform active:scale-95">
-            {isLocatingFarm ? <Loader2 className="animate-spin mr-2" size={20} /> : <Locate className="mr-2" size={20} />}
-            {isLocatingFarm ? "Recherche satellite..." : "Géolocaliser mon champ"}
-          </button>
-        </div>
-      </div>
-    );
-  }
+    <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
+      <div className="flex-grow relative overflow-hidden bg-white">
+        
+        {/* 1. L'écran de Profil (S'affiche au-dessus de tout si ouvert) */}
+        {isProfileOpen && (
+          <div className="absolute inset-0 z-50 bg-white">
+            <AccountScreen setIsProfileOpen={setIsProfileOpen} onUpdateLocation={defineFarmLocation} />
+          </div>
+        )}
 
-  return (
+        {/* 2. Les 4 onglets principaux empilés (Ils ne sont plus détruits, juste cachés !) */}
+        <div className={`absolute inset-0 transition-opacity duration-200 bg-white ${activeTab === 'dashboard' ? 'z-10 opacity-100' : 'z-0 opacity-0 pointer-events-none'}`}>
+          <DashboardScreen location={farmLocation} setIsProfileOpen={setIsProfileOpen} setActiveTab={setActiveTab} />
+        </div>
+        
+        <div className={`absolute inset-0 transition-opacity duration-200 bg-white ${activeTab === 'weather' ? 'z-10 opacity-100' : 'z-0 opacity-0 pointer-events-none'}`}>
+          <WeatherScreen location={farmLocation} forecast={weatherForecast} isLoading={isWeatherLoading} />
+        </div>
+        
+        <div className={`absolute inset-0 transition-opacity duration-200 bg-white ${activeTab === 'chat' ? 'z-10 opacity-100' : 'z-0 opacity-0 pointer-events-none'}`}>
+          <ChatScreen />
+        </div>
+        
+        <div className={`absolute inset-0 transition-opacity duration-200 bg-white ${activeTab === 'alert' ? 'z-10 opacity-100' : 'z-0 opacity-0 pointer-events-none'}`}>
+          <AlertScreen />
+        </div>
+
+      </div>
+      
+      {/* 3. La barre de navigation du bas */}
+      {!isProfileOpen && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />}
+    </div>
+  ); (
     <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
       <div className="flex-grow overflow-hidden relative">
         {isProfileOpen ? (
