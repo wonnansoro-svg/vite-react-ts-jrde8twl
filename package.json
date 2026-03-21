@@ -12,6 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
+    "openai": "^6.32.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1"

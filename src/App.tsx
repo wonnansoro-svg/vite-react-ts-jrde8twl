@@ -353,9 +353,9 @@ const ChatScreen: React.FC = () => {
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    try {
+   try {
       // 2. RÉCUPÉRATION DE LA CLÉ API (Bypass TypeScript)
-      const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY; 
+      const API_KEY = (import.meta as any).env.Gemini_API_Key; 
       
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
@@ -392,10 +392,20 @@ const ChatScreen: React.FC = () => {
       // 6. AFFICHAGE DE LA RÉPONSE DE L'IA
       setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
       
-     } catch (error: any) {
+    } catch (error: any) {
       console.error("Détails de l'erreur API :", error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème de connexion à l'IA : ${error.message}` }]);
-     } finally { 
+      
+      // 7. GESTION DES ERREURS INTELLIGENTE
+      let errorMessage = `Désolé, problème de connexion à l'IA : ${error.message}`;
+      
+      // Si c'est l'erreur 429 (Trop de requêtes), on affiche le message poli
+      if (error.message && (error.message.includes("429") || error.message.includes("quota"))) {
+        errorMessage = "Oups, SAIDA est très sollicitée par d'autres agriculteurs en ce moment ! Veuillez patienter environ une minute avant de renvoyer votre message. ⏳";
+      }
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: errorMessage }]);
+      
+    } finally { 
       setIsLoading(false); 
     }
   };
