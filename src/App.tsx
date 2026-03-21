@@ -355,7 +355,7 @@ const ChatScreen: React.FC = () => {
 
    try {
       // 2. RÉCUPÉRATION DE LA CLÉ API (Bypass TypeScript)
-      const API_KEY = (import.meta as any).env.Gemini_API_Key; 
+      const API_KEY = (import.meta as any).env.Gemini_API_KEY;
       
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
