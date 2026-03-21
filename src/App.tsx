@@ -5,11 +5,11 @@ import {
   AlertTriangle, Send, Sun, Cloud, Bug, Leaf, 
   MapPin, ArrowLeft, Wind, CloudLightning, 
   XCircle, Loader2, Locate, Phone, MessageSquare, Map,
-  CreditCard, Check, Crown, Star, Activity
+  CreditCard, Check, Crown, Star, Activity, HelpCircle
 } from 'lucide-react';
 
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Polygon, Popup, Circle, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, useMap } from 'react-leaflet';
 
 // --- 1. DÉFINITION DES TYPES ---
 type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
@@ -63,12 +63,16 @@ const BottomNav: React.FC<{ activeTab: TabType, setActiveTab: (t: TabType) => vo
 
 const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdateLocation: () => void }> = ({ setIsProfileOpen, onUpdateLocation }) => {
   const [currentPlan, setCurrentPlan] = useState('premium');
+  const supportNumber = "22500000000"; // Numéro d'assistance à modifier
+
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto z-40 relative pb-20">
       <div className="bg-green-700 text-white p-4 pt-6 flex items-center font-bold text-lg sticky top-0 shadow-md z-20">
         <button onClick={() => setIsProfileOpen(false)} className="mr-3 p-1.5 hover:bg-green-600 rounded-full transition-colors"><ArrowLeft size={24} /></button> Mon Profil
       </div>
+      
       <div className="p-4 space-y-6">
+        {/* EN TÊTE DU PROFIL */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-16 h-16 rounded-full border-2 border-green-500 object-cover" />
           <div>
@@ -77,12 +81,57 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
             {currentPlan === 'premium' && <span className="inline-flex items-center bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"><Crown size={12} className="mr-1" /> Membre Premium</span>}
           </div>
         </div>
+
+        {/* NOUVEAU : BOUTON ASSISTANCE */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-800 mb-3 flex items-center"><Map className="mr-2 text-green-600" size={20}/> Gestion de mon exploitation</h3>
+          <h3 className="font-bold text-gray-800 mb-2 flex items-center"><HelpCircle className="mr-2 text-green-600" size={20}/> Besoin d'assistance ?</h3>
+          <p className="text-sm text-gray-600 mb-4">Un problème avec l'application ou besoin d'un conseil agronomique ?</p>
+          <div className="flex space-x-3">
+            <a href={`tel:+${supportNumber}`} className="flex-1 bg-gray-800 hover:bg-black text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-sm transition-colors shadow-sm">
+              <Phone size={16} className="mr-2" /> Appeler
+            </a>
+            <a href={`https://wa.me/${supportNumber}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-sm transition-colors shadow-sm">
+              <MessageCircle size={16} className="mr-2" /> WhatsApp
+            </a>
+          </div>
+        </div>
+        
+        {/* GESTION GPS */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-800 mb-3 flex items-center"><Map className="mr-2 text-green-600" size={20}/> Gestion de l'exploitation</h3>
           <button onClick={() => { onUpdateLocation(); setIsProfileOpen(false); }} className="w-full bg-blue-50 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 flex items-center justify-center hover:bg-blue-100 transition-colors">
             <Locate className="mr-2" size={20} /> Mettre à jour la position GPS
           </button>
         </div>
+
+        {/* RETOUR DE LA SECTION ABONNEMENTS */}
+        <div>
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center"><CreditCard className="mr-2 text-green-600" size={20}/> Mes Abonnements</h3>
+          <div className="space-y-4">
+            <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'gratuit' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'}`}>
+              <h4 className="font-black text-gray-800 text-lg">Basique (Gratuit)</h4>
+              <p className="text-2xl font-black text-green-600 my-1">0 FCFA <span className="text-sm text-gray-500 font-medium">/ mois</span></p>
+              <ul className="text-xs text-gray-600 mt-2 space-y-1">
+                <li className="flex items-center"><Check size={14} className="text-green-500 mr-1"/> Météo locale basique</li>
+                <li className="flex items-center"><Check size={14} className="text-green-500 mr-1"/> Chat IA (limité)</li>
+              </ul>
+              {currentPlan !== 'gratuit' && <button onClick={() => setCurrentPlan('gratuit')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-gray-500 bg-gray-100">Passer au plan gratuit</button>}
+            </div>
+
+            <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'premium' ? 'border-yellow-400 bg-yellow-50 shadow-md' : 'border-gray-200 bg-white'}`}>
+              {currentPlan === 'premium' && <div className="absolute -top-3 right-4 bg-yellow-400 text-yellow-900 text-[10px] font-black px-3 py-1 rounded-full uppercase flex items-center"><Crown size={12} className="mr-1"/> Actuel</div>}
+              <h4 className="font-black text-gray-800 text-lg flex items-center">Premium <Crown size={18} className="ml-2 text-yellow-500"/></h4>
+              <p className="text-2xl font-black text-yellow-600 my-1">2 500 FCFA <span className="text-sm text-gray-500 font-medium">/ mois</span></p>
+              <ul className="text-xs text-gray-700 mt-2 space-y-1 font-medium">
+                <li className="flex items-center"><Check size={14} className="text-yellow-600 mr-1"/> Alertes satellites NDVI</li>
+                <li className="flex items-center"><Check size={14} className="text-yellow-600 mr-1"/> Chat IA illimité & Audio</li>
+                <li className="flex items-center"><Check size={14} className="text-yellow-600 mr-1"/> Assistance agronome 24/7</li>
+              </ul>
+              {currentPlan !== 'premium' && <button onClick={() => setCurrentPlan('premium')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600">Mettre à niveau</button>}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -121,30 +170,27 @@ const AlertScreen: React.FC = () => {
   );
 };
 
-// --- 5. ÉCRAN DASHBOARD (Alerte rapide, Coton, Popup Audio) ---
+// --- 5. ÉCRAN DASHBOARD ---
 const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Coordonnées des 3 parcelles
   const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
   const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
   const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
 
-  // Base de données simulée pour les recommandations NDVI
   const cropData: any = {
     'Maïs': { ndvi: '0.42', status: 'Critique', color: 'text-red-600', bg: 'bg-red-100', text: "Attention ! L'indice de santé de votre maïs a fortement baissé. Le satellite détecte des dommages qui correspondent aux chenilles légionnaires. Traitement urgent conseillé." },
     'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Votre parcelle de coton se porte bien. La croissance végétative est normale. Pensez à vérifier l'humidité du sol." },
     'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "Vos anacardiers sont en pleine forme. L'indice NDVI est excellent. Préparez-vous sereinement pour la prochaine campagne." }
   };
 
-  // Fonction de lecture vocale pour l'agriculteur
   const lireRecommandation = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'fr-FR';
-      utterance.rate = 0.85; // Un peu plus lent pour être bien compris
+      utterance.rate = 0.85; 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
@@ -170,7 +216,6 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
         </MapContainer>
       </div>
 
-      {/* NOUVEAU : ALERTE URGENCE VISIBLE IMMÉDIATEMENT */}
       <div className="px-4 mt-5 -mb-2">
         <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded-xl shadow-sm flex flex-col items-start relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg">URGENCE</div>
@@ -198,7 +243,6 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
         </div>
       </div>
       
-      {/* POPUP DE RECOMMANDATION NDVI AVEC AUDIO */}
       {selectedCrop && cropData[selectedCrop] && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
