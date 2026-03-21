@@ -364,8 +364,7 @@ const ChatScreen: React.FC = () => {
       // 3. INITIALISATION DE GEMINI
       const genAI = new GoogleGenerativeAI(API_KEY);
       // Utilisation du modèle standard recommandé par Google pour les chats, qui est plus rapide et moins coûteux que "gemini-pro" tout en offrant d'excellentes performances pour la plupart des interactions.
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       // 4. PRÉPARATION DE L'HISTORIQUE
       const history = messages.slice(1).map(m => ({ 
         role: m.role === 'assistant' ? 'model' : 'user', 
