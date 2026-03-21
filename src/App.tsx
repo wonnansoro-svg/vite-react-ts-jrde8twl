@@ -189,6 +189,8 @@ const AlertScreen: React.FC = () => {
 
 // --- 5. ÉCRAN DASHBOARD ---
 const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
+  const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
+   const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -201,11 +203,7 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
     'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Votre parcelle de coton se porte bien. La croissance végétative est normale. Pensez à vérifier l'humidité du sol." },
     'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "Vos anacardiers sont en pleine forme. L'indice NDVI est excellent. Préparez-vous sereinement pour la prochaine campagne." }
   };
-      
-  const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
-  const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
 
-  // ... (il y a peut-être d'autres codes ici que vous aviez déjà) ...
   const lireRecommandation = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
