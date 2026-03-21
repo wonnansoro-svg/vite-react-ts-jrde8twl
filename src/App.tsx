@@ -363,7 +363,7 @@ const ChatScreen: React.FC = () => {
       // 3. INITIALISATION DE GEMINI
       const genAI = new GoogleGenerativeAI(API_KEY);
       // Utilisation du modèle standard recommandé par Google
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
       // 4. PRÉPARATION DE L'HISTORIQUE
       const history = messages.slice(1).map(m => ({ 
