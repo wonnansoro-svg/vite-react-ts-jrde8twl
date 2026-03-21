@@ -10,7 +10,7 @@ import {
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { MapContainer, TileLayer, Polygon, Popup, useMap, FeatureGroup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, useMap, FeatureGroup, ImageOverlay } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -201,7 +201,11 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
     'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Votre parcelle de coton se porte bien. La croissance végétative est normale. Pensez à vérifier l'humidité du sol." },
     'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "Vos anacardiers sont en pleine forme. L'indice NDVI est excellent. Préparez-vous sereinement pour la prochaine campagne." }
   };
+      
+  const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
+  const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
 
+  // ... (il y a peut-être d'autres codes ici que vous aviez déjà) ...
   const lireRecommandation = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -230,30 +234,94 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           
           {/* NOUVEAU : LA ZONE DE DESSIN */}
+      // À AJOUTER au début de votre composant DashboardScreen :
+  const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
+  const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
+
+  // ... plus bas, dans votre MapContainer, remplacez le FeatureGroup par ceci :
+
           <FeatureGroup>
             <EditControl
               position="topright"
-              onCreated={(e: any) => {
-                // Quand l'agriculteur a fini de dessiner, on récupère les coordonnées GPS !
+              onCreated={async (e: any) => {
                 const layer = e.layer;
-                const coordinates = layer.getLatLngs();
-                console.log("Nouvelle parcelle dessinée :", coordinates);
-                alert("Super ! Votre parcelle a été dessinée. Nous avons récupéré ses coordonnées GPS.");
+                const bounds = layer.getBounds();
+                
+                // 1. Calcul de la zone rectangulaire pour afficher l'image plus tard
+                const leafletBounds = [
+                  [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
+                  [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+                ];
+
+                // 2. Conversion des coordonnées pour l'API (Longitude d'abord, puis Latitude)
+                const latlngs = layer.getLatLngs()[0];
+                const geoJsonCoords = latlngs.map((coord: any) => [coord.lng, coord.lat]);
+                geoJsonCoords.push(geoJsonCoords[0]); // Fermer le polygone
+
+                setIsLoadingNdvi(true);
+                alert("📡 Demande envoyée au satellite... Calcul de la santé de vos plantes (NDVI) en cours !");
+
+                try {
+                  // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE (AgroMonitoring)
+                  const API_KEY = "VOTRE_CLE_AGROMONITORING_ICI"; 
+
+                  // ÉTAPE A : Créer la parcelle sur le serveur satellite
+                  const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: "Champ Agriculteur",
+                      geo_json: {
+                        type: "Feature",
+                        properties: {},
+                        geometry: { type: "Polygon", coordinates: [geoJsonCoords] }
+                      }
+                    })
+                  });
+
+                  const polyData = await polyResponse.json();
+                  if (!polyData.id) throw new Error("Erreur de création du champ");
+
+                  // ÉTAPE B : Récupérer les images des 30 derniers jours
+                  const end = Math.floor(Date.now() / 1000); // Date d'aujourd'hui
+                  const start = end - (30 * 24 * 60 * 60);   // Il y a 30 jours
+
+                  const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
+                  const imgData = await imgResponse.json();
+
+                  if (imgData && imgData.length > 0) {
+                    // Prendre l'image la plus récente (la dernière du tableau)
+                    const latestImage = imgData[imgData.length - 1];
+                    const ndviUrl = latestImage.image.ndvi;
+
+                    // ÉTAPE C : Afficher l'image sur la carte
+                    setNdviOverlay({ url: ndviUrl, bounds: leafletBounds });
+                    alert("✅ Analyse terminée ! Les zones rouges nécessitent votre attention (maladie ou manque d'eau), les zones vertes sont en pleine santé.");
+                  } else {
+                    alert("Nuages détectés ☁️. Aucune image satellite claire n'est disponible pour les 30 derniers jours.");
+                  }
+                } catch (error) {
+                  console.error("Erreur Satellite:", error);
+                  alert("❌ Impossible de contacter le satellite. Avez-vous entré votre clé API ?");
+                } finally {
+                  setIsLoadingNdvi(false);
+                }
               }}
               draw={{
-                rectangle: false, // On désactive le rectangle
-                circle: false,    // On désactive le cercle
-                circlemarker: false, // On désactive le marqueur
-                marker: false,    // On désactive le pin simple
-                polyline: false,  // On désactive la ligne simple
-                polygon: {
-                  allowIntersection: false, // Empêche de faire des polygones croisés bizarres
-                  drawError: { color: '#e1e100', message: '<strong>Erreur:</strong> les bords ne peuvent pas se croiser!' },
-                  shapeOptions: { color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.5 } // Couleur verte du champ
-                }
+                rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false,
+                polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } }
               }}
             />
           </FeatureGroup>
+
+          {/* C'est ICI que l'image satellite vient se plaquer sur la carte ! */}
+          {ndviOverlay && (
+            <ImageOverlay 
+              url={ndviOverlay.url} 
+              bounds={ndviOverlay.bounds} 
+              opacity={0.8} 
+            />
+          )}
 
         </MapContainer>
       </div>
