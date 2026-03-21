@@ -355,7 +355,7 @@ const ChatScreen: React.FC = () => {
 
     try {
       // 2. RÉCUPÉRATION DE LA CLÉ API
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+      const API_KEY = import.meta.env.VITE; 
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez votre fichier .env");
       }
