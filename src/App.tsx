@@ -373,69 +373,60 @@ const handleSendMessage = async () => {
     setIsLoading(true);
 
     try {
-      // 1. Récupération de la clé depuis l'environnement
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+  // 1. Récupération de la clé (Vérifie bien que le nom sur Vercel est EXACTEMENT VITE_GEMINI_API_KEY)
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
-      if (!API_KEY) {
-        console.error("Clé API manquante !");
-        setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur technique : Clé API non trouvée." }]);
-        setIsLoading(false);
-        return;
+  if (!API_KEY) {
+    setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur : La clé API n'est pas configurée sur le serveur." }]);
+    setIsLoading(false);
+    return;
+  }
+
+  // 2. Préparation de l'historique
+  const geminiHistory = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const messagesWithContext = [
+    { 
+      role: 'user', 
+      parts: [{ text: "Tu es SAIDA, assistant agricole à Boundiali. Réponses très courtes (2 phrases). Spécialiste : maïs, anacarde, chenilles." }]
+    },
+    { 
+      role: 'model', 
+      parts: [{ text: "Compris. Je suis SAIDA." }]
+    },
+    ...geminiHistory,
+    { role: 'user', parts: [{ text: userMessage }] }
+  ];
+
+  // --- LE CHANGEMENT EST ICI : Suppression de "-latest" ---
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: messagesWithContext,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 200, // Optionnel : pour forcer des réponses courtes et économiser le quota
       }
+    })
+  });
 
-      // 2. Préparation de l'historique des messages
-      const geminiHistory = messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
-      
-      geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Détails erreur Google:", errorData);
+    throw new Error(`Erreur ${response.status}`);
+  }
 
-      // 3. Le contexte (Cerveau de SAIDA)
-      const messagesWithContext = [
-        { 
-          role: 'user', 
-          parts: [{ text: "Consigne stricte pour la suite de la conversation : Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire. Compris ?" }]
-        },
-        { 
-          role: 'model', 
-          parts: [{ text: "Compris. Je suis SAIDA. Je ferai des réponses courtes et expertes pour aider les agriculteurs ivoiriens." }]
-        },
-        ...geminiHistory
-      ];
+  const data = await response.json();
+  const aiResponse = data.candidates[0].content.parts[0].text;
 
-      // 4. L'URL CORRIGÉE avec le modèle "gemini-1.5-flash-latest" 👇
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: messagesWithContext,
-          generationConfig: {
-            temperature: 0.7
-          }
-        })
-      });
+  setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
-      if (!response.ok) {
-        throw new Error(`Erreur serveur Gemini : ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // 5. Extraction du texte de la réponse
-      const aiResponse = data.candidates[0].content.parts[0].text;
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
-
-    } catch (error) {
-      console.error("Erreur de l'IA Gemini:", error);
-      setMessages((prev) => [...prev, { 
-        role: 'assistant', 
-        content: "Désolé, ma connexion au serveur est perturbée. Pouvez-vous reposer votre question ?" 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+} catch (error) {
+  // ... reste de ton code d'erreur
   };
 
   return (
