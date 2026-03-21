@@ -563,6 +563,21 @@ export default function App() {
 
   if (!farmLocation) {
     return (
+      <div className="h-[100dvh] w-full bg-green-700 flex flex-col justify-center items-center p-6 text-center relative overflow-hidden">
+        <div className="relative z-10 bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
+          <div className="bg-green-100 w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6"><MapPin size={40} className="text-green-600" /></div>
+          <h1 className="text-2xl font-black text-gray-800 mb-2">Bienvenue sur SAIDA</h1>
+          <p className="text-gray-600 mb-8 text-sm">Pour commencer, nous avons besoin d'enregistrer la position exacte de votre champ principal pour la météo locale.</p>
+          <button onClick={defineFarmLocation} disabled={isLocatingFarm} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-transform active:scale-95">
+            {isLocatingFarm ? <Loader2 className="animate-spin mr-2" size={20} /> : <Locate className="mr-2" size={20} />}
+            {isLocatingFarm ? "Recherche satellite..." : "Géolocaliser mon champ"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
       <div className="flex-grow relative overflow-hidden bg-white">
         
@@ -593,22 +608,6 @@ export default function App() {
       </div>
       
       {/* 3. La barre de navigation du bas */}
-      {!isProfileOpen && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />}
-    </div>
-  ); (
-    <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
-      <div className="flex-grow overflow-hidden relative">
-        {isProfileOpen ? (
-          <AccountScreen setIsProfileOpen={setIsProfileOpen} onUpdateLocation={defineFarmLocation} />
-        ) : (
-          <>
-            {activeTab === 'dashboard' && <DashboardScreen location={farmLocation} setIsProfileOpen={setIsProfileOpen} setActiveTab={setActiveTab} />}
-            {activeTab === 'weather' && <WeatherScreen location={farmLocation} forecast={weatherForecast} isLoading={isWeatherLoading} />}
-            {activeTab === 'chat' && <ChatScreen />}
-            {activeTab === 'alert' && <AlertScreen />}
-          </>
-        )}
-      </div>
       {!isProfileOpen && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />}
     </div>
   );
