@@ -373,7 +373,6 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Récupération de la clé depuis l'environnement
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
@@ -383,22 +382,30 @@ const ChatScreen: React.FC = () => {
         return;
       }
 
-      // 2. Initialisation de l'IA officielle de Google
+      // 1. Initialisation
       const genAI = new GoogleGenerativeAI(API_KEY);
       
-      // On utilise le modèle flash actuel et on lui donne son "Cerveau" (System Instruction)
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire."
-      });
+      // 2. Utilisation du modèle "gemini-pro" (Le plus stable et disponible partout)
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-      // 3. Formatage de l'historique de la conversation (on ignore le premier message d'accueil)
-      const history = messages.slice(1).map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
+      // 3. Formatage de l'historique avec l'astuce du rôle de SAIDA
+      const history = [
+        {
+          role: 'user',
+          parts: [{ text: "Consigne : Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire." }]
+        },
+        {
+          role: 'model',
+          parts: [{ text: "Compris. Je suis SAIDA. Je donnerai des conseils agricoles courts et précis." }]
+        },
+        // On ajoute le reste de la conversation (en ignorant le message de base de l'interface)
+        ...messages.slice(1).map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        }))
+      ];
 
-      // 4. Envoi du message via l'outil officiel
+      // 4. Envoi de la requête
       const chat = model.startChat({ history });
       const result = await chat.sendMessage(userMessage);
       
@@ -407,10 +414,11 @@ const ChatScreen: React.FC = () => {
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
     } catch (error) {
-      console.error("Erreur détaillée de l'IA:", error);
+      // Affichage de la VRAIE erreur dans la console pour comprendre ce qui bloque
+      console.error("ERREUR DÉTAILLÉE DE L'IA :", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: "Désolé, ma connexion au serveur d'intelligence artificielle a échoué. Vérifiez la clé API." 
+        content: "Désolé, ma connexion au serveur d'intelligence artificielle a échoué. Vérifiez la console." 
       }]);
     } finally {
       setIsLoading(false);
