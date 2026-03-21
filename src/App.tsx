@@ -445,4 +445,3 @@ const handleSendMessage = async () => {
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />
     </div>
   );
-}
