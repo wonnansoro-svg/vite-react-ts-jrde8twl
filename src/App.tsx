@@ -336,6 +336,7 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
 };
 
 // --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
+// --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
   const [input, setInput] = useState('');
@@ -344,7 +345,7 @@ const ChatScreen: React.FC = () => {
   
   React.useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
- const handleSendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
     const userMessage = input;
     setInput('');
@@ -354,30 +355,37 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 💡 CORRECTION ICI : On utilise "VITE" comme nom de variable
-     const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY; 
+      // 2. RÉCUPÉRATION DE LA CLÉ API (Bypass TypeScript)
+      const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY; 
       
       if (!API_KEY) {
         throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
       }
       
-      // 3. INITIALISATION DE GEMINI
+      // 3. INITIALISATION DE GEMINI (Configuration Pro)
       const genAI = new GoogleGenerativeAI(API_KEY);
-      // Utilisation du modèle standard recommandé par Google pour les chats, qui est plus rapide et moins coûteux que "gemini-pro" tout en offrant d'excellentes performances pour la plupart des interactions.
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      // 4. PRÉPARATION DE L'HISTORIQUE
-      const history = messages.slice(1).map(m => ({ 
+      
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash", // Modèle de dernière génération
+        // LE CERVEAU DE SAIDA :
+        systemInstruction: "Tu es SAIDA, une experte agronome certifiée en Côte d'Ivoire (spécialisée en cacao, anacarde, hévéa, et cultures vivrières). Ton but est d'aider les agriculteurs locaux avec bienveillance. Règle absolue : tu dois TOUJOURS répondre de manière claire, pratique, et en 2 phrases maximum.",
+        // LES RÉGLAGES DU COMPORTEMENT :
+        generationConfig: {
+          temperature: 0.2,       // Faible = très précise, factuelle, pas d'inventions
+          topP: 0.8,              // Reste concentrée sur le sujet
+          maxOutputTokens: 100,   // Bloque physiquement les réponses trop longues
+        }
+      });
+
+      // 4. PRÉPARATION DE L'HISTORIQUE (On ignore le message de bienvenue)
+      const chatHistory = messages.slice(1).map(m => ({ 
         role: m.role === 'assistant' ? 'model' : 'user', 
         parts: [{ text: m.content }] 
       }));
 
       // 5. CONNEXION ET ENVOI À L'API
       const chat = model.startChat({ 
-        history: [
-          { role: 'user', parts: [{ text: "Tu es SAIDA, expert agricole en Côte d'Ivoire. Réponds en 2 phrases max." }] },
-          { role: 'model', parts: [{ text: "Compris. Je suis prête." }] },
-          ...history
-        ]
+        history: chatHistory
       });
 
       const result = await chat.sendMessage(userMessage);
