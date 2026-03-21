@@ -336,7 +336,6 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
 };
 
 // --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
-// --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
   const [input, setInput] = useState('');
