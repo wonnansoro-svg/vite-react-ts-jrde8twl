@@ -4,7 +4,7 @@ import {
   Home, CloudRain, MessageCircle, Bell, Volume2, 
   AlertTriangle, Send, Sun, Cloud, Bug, Leaf, 
   MapPin, ArrowLeft, Wind, CloudLightning, 
-  CheckCircle, XCircle, Loader2, Locate, Phone, MessageSquare, Map,
+  XCircle, Loader2, Locate, Phone, MessageSquare, Map,
   CreditCard, Check, Crown, Star
 } from 'lucide-react';
 
@@ -30,6 +30,7 @@ interface DailyWeather {
   Icon: any;
   actionImg: string;
   actionType: string;
+  rain?: string;
 }
 
 // --- OUTIL POUR RECENTRER LA CARTE ---
@@ -42,8 +43,8 @@ const MapUpdater = ({ center }: { center: [number, number] }) => {
 };
 
 // --- 2. FONCTIONS MÉTÉO VISUELLE & ACTIONS AGRONOMIQUES ---
-// Vous pourrez modifier ces recommandations après discussion avec vos ingénieurs terrains.
-const getWeatherVisuals = (code: number) => {
+const getWeatherVisuals = (code: number, rainSum: number = 0) => {
+  // Codes WMO affinés pour plus de précision
   if (code === 0 || code === 1) return { 
     weatherImg: "https://img.freepik.com/photos-gratuite/beau-paysage-ciel-bleu_23-2151906820.jpg?w=740", 
     Icon: Sun, 
@@ -58,12 +59,12 @@ const getWeatherVisuals = (code: number) => {
     actionType: "sowing", 
     ttsText: "Ciel nuageux avec bonne humidité. Suggestion : Conditions parfaites pour semer le maïs ou épandre de l'engrais de fond." 
   };
-  if (code >= 50 && code <= 67) return { 
+  if (code >= 50 && code <= 67 || rainSum > 0) return { 
     weatherImg: "https://img.freepik.com/vecteurs-libre/parapluie-rouge-sous-pluie_1284-11413.jpg?w=740", 
     Icon: CloudRain, 
     actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", 
     actionType: "spray_no", 
-    ttsText: "Pluie prévue aujourd'hui. Suggestion : Ne faites aucune pulvérisation de pesticides, le produit sera lessivé. Profitez-en pour faire l'entretien du matériel." 
+    ttsText: `Pluie prévue aujourd'hui (${rainSum}mm). Suggestion : Ne faites aucune pulvérisation de pesticides, le produit sera lessivé.` 
   };
   if (code >= 80) return { 
     weatherImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIMzaqG-lwT8wszF3lRYHXvVgI7FWrkEG3ng&s", 
@@ -117,34 +118,76 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
             <Locate className="mr-2" size={20} /> Mettre à jour la position GPS
           </button>
         </div>
+        
+        {/* SECTION ABONNEMENTS */}
+        <div>
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center"><CreditCard className="mr-2 text-green-600" size={20}/> Mes Abonnements</h3>
+          <div className="space-y-4">
+            <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'gratuit' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'}`}>
+              <h4 className="font-black text-gray-800 text-lg">Basique (Gratuit)</h4>
+              <p className="text-2xl font-black text-green-600 my-1">0 FCFA <span className="text-sm text-gray-500 font-medium">/ mois</span></p>
+              {currentPlan !== 'gratuit' && <button onClick={() => setCurrentPlan('gratuit')} className="mt-3 w-full py-2 rounded-xl font-bold text-gray-500 bg-gray-100">Passer au plan gratuit</button>}
+            </div>
+
+            <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'premium' ? 'border-yellow-400 bg-yellow-50 shadow-md' : 'border-gray-200 bg-white'}`}>
+              {currentPlan === 'premium' && <div className="absolute -top-3 right-4 bg-yellow-400 text-yellow-900 text-[10px] font-black px-3 py-1 rounded-full uppercase flex items-center"><Crown size={12} className="mr-1"/> Actuel</div>}
+              <h4 className="font-black text-gray-800 text-lg flex items-center">Premium <Crown size={18} className="ml-2 text-yellow-500"/></h4>
+              <p className="text-2xl font-black text-yellow-600 my-1">2 500 FCFA <span className="text-sm text-gray-500 font-medium">/ mois</span></p>
+              {currentPlan !== 'premium' && <button onClick={() => setCurrentPlan('premium')} className="mt-3 w-full py-2.5 rounded-xl font-bold text-white bg-yellow-500">Mettre à niveau</button>}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
-// --- 4. ÉCRAN DES ALERTES ---
-const AlertScreen: React.FC = () => (
-  <div className="flex flex-col h-full bg-gray-50 overflow-y-auto pb-24">
-    <div className="bg-red-600 text-white p-4 pt-6 flex items-center font-bold text-lg sticky top-0 shadow-md">
-      <AlertTriangle className="mr-2" size={24} /> Centre d'Alertes
-    </div>
-    <div className="p-4 space-y-4">
-      <div className="bg-white rounded-2xl shadow-md border-t-4 border-red-600 overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex justify-between items-start mb-2">
-            <h2 className="font-black text-red-600 text-lg">Invasion de Chenilles Légionnaires</h2>
-            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase">Critique</span>
+// --- 4. ÉCRAN DES ALERTES (AVEC BOUTONS CONTACT RESTAURÉS) ---
+const AlertScreen: React.FC = () => {
+  // Numéro de téléphone de l'ingénieur agronome ou de l'assistance (à modifier)
+  const contactNumber = "22500000000"; 
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto pb-24">
+      <div className="bg-red-600 text-white p-4 pt-6 flex items-center font-bold text-lg sticky top-0 shadow-md">
+        <AlertTriangle className="mr-2" size={24} /> Centre d'Alertes
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="bg-white rounded-2xl shadow-md border-t-4 border-red-600 overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex justify-between items-start mb-2">
+              <h2 className="font-black text-red-600 text-lg">Invasion de Chenilles Légionnaires</h2>
+              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase">Critique</span>
+            </div>
+            <p className="text-sm text-gray-600 font-medium">Détecté sur : Parcelle 1 (Maïs)</p>
           </div>
-          <p className="text-sm text-gray-600 font-medium">Détecté sur : Parcelle 1 (Maïs)</p>
-        </div>
-        <img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenilles" className="w-full h-48 object-cover" />
-        <div className="p-4 bg-red-50">
-          <p className="text-sm text-gray-800 mb-4">L'analyse satellite indique une perte rapide de la masse végétale. Action urgente : Appliquez un bio-pesticide approprié tôt le matin ou tard le soir.</p>
+          <img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenilles" className="w-full h-48 object-cover" />
+          
+          <div className="p-4 bg-red-50">
+            <p className="text-sm text-gray-800 mb-4">L'analyse satellite indique une perte rapide de la masse végétale. Action urgente : Appliquez un bio-pesticide approprié tôt le matin ou tard le soir.</p>
+            
+            <h3 className="font-bold text-gray-800 mb-3 text-sm">Contacter un ingénieur terrain :</h3>
+            
+            {/* BOUTONS DE CONTACT RESTAURÉS ET AMÉLIORÉS */}
+            <div className="flex space-x-2">
+              <a href={`tel:+${contactNumber}`} className="flex-1 bg-gray-800 hover:bg-black text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm">
+                <Phone size={16} className="mr-1.5" /> Appel
+              </a>
+              <a href={`sms:+${contactNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm">
+                <MessageSquare size={16} className="mr-1.5" /> SMS
+              </a>
+              <a href={`https://wa.me/${contactNumber}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm">
+                <MessageCircle size={16} className="mr-1.5" /> WhatsApp
+              </a>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- 5. ÉCRAN DASHBOARD ---
 const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
@@ -156,7 +199,7 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-        <div className="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto shadow-md"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">Localisation : {location.city}</span></div>
+        <div className="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto shadow-md"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">{location.city}</span></div>
         <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto shadow-md"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
       </div>
       
@@ -192,7 +235,7 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
   const speak = (id: number, dayName: string, text: string, temp: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(`Prévisions pour ${dayName} à ${location.city}. Température maximum de ${temp}. ${text}`);
+      const utterance = new SpeechSynthesisUtterance(`Prévisions pour ${dayName} à ${location.city}. Température de ${temp}. ${text}`);
       utterance.lang = 'fr-FR'; utterance.rate = 0.9;
       utterance.onstart = () => setSpeakingId(id); utterance.onend = () => setSpeakingId(null); utterance.onerror = () => setSpeakingId(null);
       window.speechSynthesis.speak(utterance);
@@ -207,7 +250,9 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
       <div className="p-4 space-y-4">
         {forecast.map((day) => (
           <div key={day.id} className="bg-white rounded-2xl overflow-hidden shadow-md flex flex-col relative">
-            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm uppercase">{day.day}</div>
+            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm uppercase flex justify-center items-center">
+              {day.day} {day.rain && day.rain !== "0mm" && <span className="ml-2 text-blue-300 text-xs lowercase">({day.rain})</span>}
+            </div>
             <button onClick={() => speak(day.id, day.day, day.ttsText || "", day.temp)} className={`absolute top-10 right-2 z-50 p-2 rounded-full shadow-lg ${speakingId === day.id ? 'bg-green-500 text-white animate-pulse scale-110' : 'bg-white/80 text-green-700'}`}><Volume2 size={24} /></button>
             <div className="flex h-36">
               <div className="w-1/2 relative border-r-2 border-white"><img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div><div className="absolute top-2 left-2 flex items-center"><day.Icon className="text-white mr-1.5" size={20} /><span className="text-2xl font-black text-white leading-none">{day.temp}</span></div><div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded flex items-center"><Wind className="text-blue-300 mr-1.5" size={14} /><span className="text-xs font-bold text-white">{day.wind}</span></div></div>
@@ -223,7 +268,7 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
   );
 };
 
-// --- 7. ÉCRAN CHAT IA (CORRIGÉ AVEC LE SDK OFFICIEL) ---
+// --- 7. ÉCRAN CHAT IA ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
   const [input, setInput] = useState('');
@@ -243,18 +288,13 @@ const ChatScreen: React.FC = () => {
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
       if (!API_KEY) throw new Error("Clé API manquante");
 
-      // UTILISATION DU SDK OFFICIEL (Plus stable que le fetch manuel)
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      const history = messages.slice(1).map(m => ({ 
-        role: m.role === 'assistant' ? 'model' : 'user', 
-        parts: [{ text: m.content }] 
-      }));
-
+      const history = messages.slice(1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const chat = model.startChat({ 
         history: [
-          { role: 'user', parts: [{ text: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde." }] },
+          { role: 'user', parts: [{ text: "Tu es SAIDA, expert agricole en Côte d'Ivoire. Réponds en 2 phrases max." }] },
           { role: 'model', parts: [{ text: "Compris. Je suis prête." }] },
           ...history
         ]
@@ -264,11 +304,8 @@ const ChatScreen: React.FC = () => {
       setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
       
     } catch (error: any) {
-      console.error("Erreur de l'IA:", error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème IA : ${error.message}. Vérifiez que votre clé API est bien configurée sur Vercel.` }]);
-    } finally { 
-      setIsLoading(false); 
-    }
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème IA : ${error.message}.` }]);
+    } finally { setIsLoading(false); }
   };
 
   return (
@@ -285,7 +322,7 @@ const ChatScreen: React.FC = () => {
   );
 };
 
-// --- 8. APPLICATION PRINCIPALE (RESTAURÉE) ---
+// --- 8. APPLICATION PRINCIPALE ---
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -300,19 +337,36 @@ export default function App() {
     if (savedLocation) setFarmLocation(JSON.parse(savedLocation));
   }, []);
 
+  // FONCTION POUR TROUVER LE VRAI NOM DE LA VILLE (REVERSE GEOCODING)
+  const getCityName = async (lat: number, lon: number) => {
+    try {
+      // Utilisation d'une API gratuite pour récupérer la localité
+      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=fr`);
+      const data = await res.json();
+      return data.locality || data.city || "Zone Agricole";
+    } catch (error) {
+      console.error("Erreur de nom de ville :", error);
+      return "Localité inconnue";
+    }
+  };
+
   const defineFarmLocation = () => {
     setIsLocatingFarm(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const newLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude, city: "Ma Localité" };
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const cityName = await getCityName(lat, lon); // On récupère le vrai nom de la ville ici
+          
+          const newLoc = { lat, lon, city: cityName };
           setFarmLocation(newLoc);
           localStorage.setItem('farmLocation', JSON.stringify(newLoc)); 
           setIsLocatingFarm(false);
         },
         (error) => {
-          console.error("Erreur GPS Onboarding:", error);
-          alert("GPS refusé. Nous utilisons Boundiali par défaut.");
+          console.error("Erreur GPS:", error);
+          alert("GPS refusé ou introuvable. Boundiali utilisé par défaut.");
           const defaultLoc = { lat: 9.5217, lon: -6.4869, city: "Boundiali" };
           setFarmLocation(defaultLoc);
           localStorage.setItem('farmLocation', JSON.stringify(defaultLoc));
@@ -325,22 +379,27 @@ export default function App() {
     }
   };
 
-  // APPEL API MÉTÉO (Vraie météo basée sur la localité)
+  // APPEL API MÉTÉO (Précision améliorée avec les précipitations)
   useEffect(() => {
     if (!farmLocation) return;
     const fetchWeather = async () => {
       try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${farmLocation.lat}&longitude=${farmLocation.lon}&daily=weathercode,temperature_2m_max,windspeed_10m_max&timezone=auto`);
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${farmLocation.lat}&longitude=${farmLocation.lon}&daily=weathercode,temperature_2m_max,windspeed_10m_max,precipitation_sum&timezone=auto`);
         const data = await response.json();
+        
         const formattedForecast = data.daily.time.map((date: string, index: number) => {
           const code = data.daily.weathercode[index];
           const temp = data.daily.temperature_2m_max[index];
           const wind = data.daily.windspeed_10m_max[index];
-          const visuals = getWeatherVisuals(code);
+          const rain = data.daily.precipitation_sum[index]; // Récupération de la pluie
+          
+          const visuals = getWeatherVisuals(code, rain);
           const dateObj = new Date(date);
           const dayName = index === 0 ? "Aujourd'hui" : index === 1 ? "Demain" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
-          return { id: index, day: dayName, temp: `${temp}°C`, wind: `${wind} km/h`, ...visuals };
+          
+          return { id: index, day: dayName, temp: `${temp}°C`, wind: `${wind} km/h`, rain: `${rain}mm`, ...visuals };
         }).slice(0, 7);
+        
         setWeatherForecast(formattedForecast);
       } catch (error) { console.error("Erreur météo:", error); } finally { setIsWeatherLoading(false); }
     };
@@ -353,7 +412,7 @@ export default function App() {
         <div className="relative z-10 bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full">
           <div className="bg-green-100 w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6"><MapPin size={40} className="text-green-600" /></div>
           <h1 className="text-2xl font-black text-gray-800 mb-2">Bienvenue sur SAIDA</h1>
-          <p className="text-gray-600 mb-8 text-sm">Pour commencer, nous avons besoin d'enregistrer la position exacte de votre champ principal.</p>
+          <p className="text-gray-600 mb-8 text-sm">Pour commencer, nous avons besoin d'enregistrer la position exacte de votre champ principal pour la météo locale.</p>
           <button onClick={defineFarmLocation} disabled={isLocatingFarm} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-transform active:scale-95">
             {isLocatingFarm ? <Loader2 className="animate-spin mr-2" size={20} /> : <Locate className="mr-2" size={20} />}
             {isLocatingFarm ? "Recherche satellite..." : "Géolocaliser mon champ"}
