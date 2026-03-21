@@ -373,207 +373,64 @@ const handleSendMessage = async () => {
     setIsLoading(true);
 
     try {
-  // 1. Récupération de la clé (Vérifie bien que le nom sur Vercel est EXACTEMENT VITE_GEMINI_API_KEY)
-  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+      // 1. Récupération (Vérifie bien le préfixe VITE_ sur Vercel)
+      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
-  if (!API_KEY) {
-    setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur : La clé API n'est pas configurée sur le serveur." }]);
-    setIsLoading(false);
-    return;
-  }
-
-  // 2. Préparation de l'historique
-  const geminiHistory = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
-
-  const messagesWithContext = [
-    { 
-      role: 'user', 
-      parts: [{ text: "Tu es SAIDA, assistant agricole à Boundiali. Réponses très courtes (2 phrases). Spécialiste : maïs, anacarde, chenilles." }]
-    },
-    { 
-      role: 'model', 
-      parts: [{ text: "Compris. Je suis SAIDA." }]
-    },
-    ...geminiHistory,
-    { role: 'user', parts: [{ text: userMessage }] }
-  ];
-
-  // --- LE CHANGEMENT EST ICI : Suppression de "-latest" ---
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: messagesWithContext,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 200, // Optionnel : pour forcer des réponses courtes et économiser le quota
+      if (!API_KEY) {
+        throw new Error("Clé API manquante dans les variables d'environnement");
       }
-    })
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Détails erreur Google:", errorData);
-    throw new Error(`Erreur ${response.status}`);
-  }
-
-  const data = await response.json();
-  const aiResponse = data.candidates[0].content.parts[0].text;
-
-  setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
-
-} catch (error) {
-  // ... reste de ton code d'erreur
-  };
-
-  return (
-    <div className="flex flex-col h-full bg-gray-50 pb-16">
+      // 2. Construction de l'historique
+      const geminiHistory = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
       
-      {/* En-tête */}
-      <div className="bg-green-700 text-white p-4 pt-6 flex items-center shadow-md z-10 shrink-0">
-        <MessageSquare className="mr-3" size={24} />
-        <div>
-          <h2 className="font-bold text-lg leading-tight">Agri-IA Expert</h2>
-          <span className="text-[10px] text-green-200 flex items-center">
-            <span className="w-2 h-2 rounded-full bg-green-400 mr-1 animate-pulse"></span> En ligne
-          </span>
-        </div>
-      </div>
-
-      {/* Zone des messages */}
-      <div className="flex-grow p-4 overflow-y-auto space-y-4">
-        {messages.map((msg, index) => (
-          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm text-sm ${
-              msg.role === 'user' 
-                ? 'bg-green-600 text-white rounded-tr-none' 
-                : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-            }`}>
-              {msg.content}
-            </div>
-          </div>
-        ))}
-        
-        {/* Animation de chargement quand l'IA "réfléchit" */}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex space-x-2 items-center">
-              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Zone de saisie */}
-      <div className="bg-white p-3 border-t border-gray-200 shrink-0 flex items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
-          <Camera size={24} />
-        </button>
-        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors mr-2">
-          <Volume2 size={24} />
-        </button>
-        
-        <input 
-          type="text" 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          placeholder="Posez votre question..." 
-          className="flex-grow bg-gray-100 text-sm rounded-full px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500"
-        />
-        
-        <button 
-          onClick={handleSendMessage}
-          disabled={!input.trim() || isLoading}
-          className={`ml-2 p-2.5 rounded-full flex items-center justify-center transition-colors ${
-            input.trim() && !isLoading ? 'bg-green-600 text-white shadow-md hover:bg-green-700' : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          <Send size={18} className="ml-0.5" />
-        </button>
-      </div>
-    </div>
-  );
-};
-const AlertScreen: React.FC = () => { /* Gardez votre code original ici */ return <div className="flex flex-col h-full bg-gray-50 overflow-y-auto"><div className="bg-red-600 text-white p-4 pt-6 flex items-center shadow-md"><AlertTriangle className="mr-2 animate-pulse" size={24} /><h2 className="font-bold text-lg">Alerte Critique</h2></div><div className="p-4 flex flex-col items-center justify-center mt-10"><AlertTriangle size={64} className="text-red-500 mb-4" /><h3 className="text-xl font-bold text-gray-800">Chenille Légionnaire</h3><p className="text-center text-gray-600 mt-2 mb-6">Détection confirmée. Traitement urgent requis.</p><a href="tel:+2250778014537" className="w-full flex items-center justify-center bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md"><Phone className="mr-2" size={20} /> APPELER LE TECHNICIEN</a></div></div>; };
-
-
-// --- COMPOSANT PRINCIPAL APP (Le Cerveau) ---
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-  
-  // NOUVEAU : États globaux pour la position et la météo
-  const [location, setLocation] = useState<LocationState>({ lat: 9.5246, lon: -6.4867, city: "Recherche du réseau..." }); // Par défaut Boundiali
-  const [weatherForecast, setWeatherForecast] = useState<DailyWeather[]>([]);
-  const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(true);
-
-  // NOUVEAU : Effet déclenché à l'ouverture de l'application
-  useEffect(() => {
-    // 1. Demander la permission GPS au navigateur du jury
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchData(position.coords.latitude, position.coords.longitude);
+      const messagesWithContext = [
+        { 
+          role: 'user', 
+          parts: [{ text: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde." }]
         },
-        (error) => {
-          console.log("GPS refusé. Utilisation de Boundiali par défaut.");
-          fetchData(9.5246, -6.4867); // Repli de sécurité pour le pitch
-        }
-      );
-    } else {
-      fetchData(9.5246, -6.4867);
+        { 
+          role: 'model', 
+          parts: [{ text: "Compris. Je suis prête." }]
+        },
+        ...geminiHistory,
+        { role: 'user', parts: [{ text: userMessage }] }
+      ];
+
+      // 3. Appel avec l'URL STABLE (sans le suffixe -latest)
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: messagesWithContext,
+          generationConfig: { temperature: 0.7 }
+        })
+      });
+
+      // Gestion précise des erreurs serveur
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        console.error("Erreur API détaillée :", errorDetail);
+        throw new Error(`Erreur ${response.status} : Vérifiez le nom du modèle ou la clé.`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.candidates[0].content.parts[0].text;
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
+
+    } catch (error: any) {
+      console.error("Erreur de l'IA Gemini:", error);
+      setMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: `Désolé, j'ai une erreur (${error.message}). Vérifie ta configuration Vercel.` 
+      }]);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-
-  // 2. Fonction qui interroge les vraies API (Météo et Villes)
-  const fetchData = async (lat: number, lon: number) => {
-    try {
-      // Appel API 1 : Trouver le nom de la ville (Reverse Geocoding OpenStreetMap)
-      const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-      const geoData = await geoRes.json();
-      const city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || "Zone Agricole";
-      
-      setLocation({ lat, lon, city });
-
-      // Appel API 2 : Météo réelle 7 jours (Open-Meteo, sans clé API !)
-      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,windspeed_10m_max&timezone=auto`);
-      const weatherData = await weatherRes.json();
-
-      // Transformation des données météo complexes en votre interface Visuelle
-      const formattedForecast = weatherData.daily.time.map((date: string, index: number) => {
-        const code = weatherData.daily.weathercode[index];
-        const temp = Math.round(weatherData.daily.temperature_2m_max[index]);
-        const wind = Math.round(weatherData.daily.windspeed_10m_max[index]);
-        
-        const visuals = getWeatherVisuals(code);
-        
-           const dateObj = new Date(date);
-           const dayName = index === 0 ? "Aujourd'hui" : index === 1 ? "Demain" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
-
-           return {
-          id: index,
-          day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
-          temp: `${temp}°`,
-          wind: `${wind} km/h`,
-          ...visuals
-        };
-      }).slice(0, 7);
-
-      setWeatherForecast(formattedForecast);
-      setIsWeatherLoading(false);
-
-    } catch (error) {
-      console.error("Erreur API, on garde les fausses données pour ne pas planter", error);
-      setIsWeatherLoading(false);
-    }
+};
   };
 
   return (
