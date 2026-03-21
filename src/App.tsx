@@ -99,6 +99,7 @@ const AlertScreen: React.FC = () => (
 );
 
 // --- 4. ÉCRAN DASHBOARD ---
+// --- 4. ÉCRAN DASHBOARD ---
 const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void, location: LocationState }> = ({ isProfileOpen, setIsProfileOpen, setActiveTab, location }) => {
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
   if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
@@ -121,18 +122,52 @@ const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: 
       <div className="p-4 pt-6 space-y-6">
         <div>
           <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs ({location.city})</h3>
+          
+          {/* ZONE MODIFIÉE : Le conteneur avec le Maïs, le Coton et l'Anacarde */}
           <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
-            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-28"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 1 - Maïs</h3></div></div>
+            
+            {/* CARTE 1 : MAÏS */}
+            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
+              <div className="relative h-28">
+                <img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" />
+              </div>
+              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 1 - Maïs</h3></div>
+            </div>
+
+            {/* CARTE 2 : COTON */}
+            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
+              <div className="relative h-28">
+                <img src="https://images.unsplash.com/photo-1595085350702-86ee979b9b66?w=400" alt="Coton" className="w-full h-full object-cover" />
+              </div>
+              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 2 - Coton</h3></div>
+            </div>
+
+            {/* CARTE 3 : ANACARDE */}
+            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[220px] flex-shrink-0 border border-gray-100 overflow-hidden">
+              <div className="relative h-28">
+                <img src="https://images.unsplash.com/photo-1532296068339-4ab529dc3709?w=400" alt="Anacarde" className="w-full h-full object-cover" />
+              </div>
+              <div className="p-4"><h3 className="font-bold text-gray-800">Parcelle 3 - Anacarde</h3></div>
+            </div>
+
           </div>
         </div>
+        
         <div>
           <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center"><AlertTriangle className="mr-2" size={18} /> Alertes</h3>
           <div className="bg-white rounded-xl shadow-sm border-l-4 border-red-500 p-3 flex items-center space-x-3"><img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenille" className="w-16 h-16 rounded-lg object-cover" /><div className="flex-grow"><div className="flex justify-between items-start"><h4 className="font-bold text-sm">Chenilles</h4><Bug size={16} className="text-red-500" /></div><button onClick={() => setActiveTab('alert')} className="mt-2 text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded w-full">Voir l'Alerte</button></div></div>
         </div>
       </div>
       
+      {/* Fenêtre pop-up quand on clique sur une parcelle */}
       {selectedCrop && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60"><div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative"><h3 className="text-xl font-black mb-3">Détails : {selectedCrop}</h3><button onClick={() => setSelectedCrop(null)} className="w-full bg-gray-100 py-3 rounded-xl font-bold">Fermer</button></div></div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+            <h3 className="text-xl font-black mb-3">Détails : {selectedCrop}</h3>
+            <p className="text-gray-600 mb-4">Analyse en cours pour la parcelle de {selectedCrop.toLowerCase()}...</p>
+            <button onClick={() => setSelectedCrop(null)} className="w-full bg-green-100 text-green-800 py-3 rounded-xl font-bold hover:bg-green-200">Fermer</button>
+          </div>
+        </div>
       )}
     </div>
   );
