@@ -394,18 +394,9 @@ const ChatScreen: React.FC = () => {
       
      } catch (error: any) {
       console.error("Détails de l'erreur API :", error);
-      
-      let errorMessage = `Désolé, problème de connexion à l'IA : ${error.message}`;
-      
-      // 💡 NOUVEAU : On intercepte l'erreur 429 pour afficher un message poli !
-      if (error.message.includes("429") || error.message.includes("quota")) {
-        errorMessage = "Oups, SAIDA est très sollicitée par d'autres agriculteurs en ce moment ! Veuillez patienter environ une minute avant de renvoyer votre message. ⏳";
-      }
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: errorMessage }]);
-    } finally { 
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème de connexion à l'IA : ${error.message}` }]);
+     } finally { 
       setIsLoading(false); 
-    }
     }
   };
 
