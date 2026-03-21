@@ -347,24 +347,21 @@ const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoa
   );
 };
 
-// ... [Composants ChatScreen et AlertScreen identiques à votre version originale] ...
-// --- ÉCRAN 3 : L'IA CHATBOT (Connecté à l'API) ---
+// --- ÉCRAN 3 : L'IA CHATBOT (Connecté proprement avec le SDK officiel) ---
 
 const ChatScreen: React.FC = () => {
-  // Historique des messages
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Bonjour ! Je suis SAIDA, votre expert agricole. Que se passe-t-il dans votre champ de maïs ou d'anacarde aujourd'hui ?" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Pour scroller automatiquement vers le bas quand un message arrive
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-const handleSendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = input;
@@ -373,51 +370,30 @@ const handleSendMessage = async () => {
     setIsLoading(true);
 
     try {
-      // 1. Récupération (Vérifie bien le préfixe VITE_ sur Vercel)
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
         throw new Error("Clé API manquante dans les variables d'environnement");
       }
 
-      // 2. Construction de l'historique
-      const geminiHistory = messages.map(m => ({
+      // CORRECTION 1 : On utilise le SDK officiel que vous avez importé !
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde."
+      });
+
+      // On formate l'historique sans le message d'accueil
+      const history = messages.slice(1).map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
+
+      // On lance la discussion
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(userMessage);
       
-      const messagesWithContext = [
-        { 
-          role: 'user', 
-          parts: [{ text: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde." }]
-        },
-        { 
-          role: 'model', 
-          parts: [{ text: "Compris. Je suis prête." }]
-        },
-        ...geminiHistory,
-        { role: 'user', parts: [{ text: userMessage }] }
-      ];
-
-      // 3. Appel avec l'URL STABLE (sans le suffixe -latest)
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: messagesWithContext,
-          generationConfig: { temperature: 0.7 }
-        })
-      });
-
-      // Gestion précise des erreurs serveur
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        console.error("Erreur API détaillée :", errorDetail);
-        throw new Error(`Erreur ${response.status} : Vérifiez le nom du modèle ou la clé.`);
-      }
-
-      const data = await response.json();
-      const aiResponse = data.candidates[0].content.parts[0].text;
+      const aiResponse = result.response.text();
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
@@ -425,12 +401,75 @@ const handleSendMessage = async () => {
       console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: `Désolé, j'ai une erreur (${error.message}). Vérifie ta configuration Vercel.` 
+        content: `Désolé, j'ai eu un problème de connexion. Vérifiez la console.` 
       }]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // CORRECTION 2 : Il manquait l'affichage graphique du Chat !
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
+        {messages.map((msg, index) => (
+          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-200 shadow-sm rounded-bl-none'}`}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+             <div className="bg-white text-gray-800 border border-gray-200 shadow-sm p-3 rounded-2xl rounded-bl-none flex items-center space-x-2">
+               <Loader2 className="animate-spin text-green-600" size={16} />
+               <span className="text-sm text-gray-500">SAIDA réfléchit...</span>
+             </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+      
+      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t border-gray-200 flex items-center z-10">
+        <input 
+          type="text" 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Posez votre question à SAIDA..." 
+          className="flex-grow bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+        />
+        <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="ml-2 bg-green-600 text-white p-2.5 rounded-full hover:bg-green-700 transition-colors">
+          <Send size={18} />
+        </button>
+      </div>
+    </div>
+  );
 };
+
+
+// --- CORRECTION 3 : IL MANQUAIT LE COMPOSANT PRINCIPAL (APP) ! ---
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  // Fausses données pour que l'application ne plante pas
+  const location = { lat: 9.5217, lon: -6.4869, city: "Boundiali" };
+  const weatherForecast: DailyWeather[] = []; 
+  const isWeatherLoading = false;
+
+  return (
+    <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
+      <div className="flex-grow overflow-hidden relative">
+        {activeTab === 'dashboard' && <DashboardScreen isProfileOpen={isProfileOpen} setIsProfileOpen={setIsProfileOpen} setActiveTab={setActiveTab} location={location} />}
+        {activeTab === 'weather' && <WeatherScreen location={location} forecast={weatherForecast} isLoading={isWeatherLoading} />}
+        {activeTab === 'chat' && <ChatScreen />}
+      </div>
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />
+    </div>
+  );
+}
   };
 
   return (
