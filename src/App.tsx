@@ -373,36 +373,43 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // On récupère la clé Gemini depuis l'environnement
+      // 1. Récupération de la clé depuis Vercel
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
-        console.error("Clé API Gemini manquante !");
-        setMessages((prev) => [...prev, { role: 'assistant', content: "Désolé, ma connexion à l'IA Gemini n'est pas configurée." }]);
+        console.error("Clé API manquante !");
+        setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur technique : Clé API non trouvée." }]);
         setIsLoading(false);
         return;
       }
 
-      // Gemini utilise "model" au lieu de "assistant" pour l'historique
+      // 2. Préparation de l'historique des messages au format strict de Gemini
       const geminiHistory = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
       
-      // On ajoute la nouvelle question
       geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
 
-      // Appel direct à l'API Google Gemini (modèle 2.5 Flash, ultra rapide)
-     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
-      
+      // 3. L'astuce anti-bug : on intègre le rôle de SAIDA directement comme un premier échange invisible
+      const messagesWithContext = [
+        { 
+          role: 'user', 
+          parts: [{ text: "Consigne stricte pour la suite de la conversation : Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire. Compris ?" }]
+        },
+        { 
+          role: 'model', 
+          parts: [{ text: "Compris. Je suis ton assistant agricole. Je ferai des réponses courtes et expertes pour aider les agriculteurs ivoiriens." }]
+        },
+        ...geminiHistory
+      ];
+
+      // 4. Appel avec "gemini-1.5-flash-latest" qui résout l'erreur 404
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Tu dois donner des réponses TRÈS COURTES (2 ou 3 phrases maximum). Utilise des mots simples. Tes spécialités sont le maïs, l'anacarde, la météo et la lutte contre la chenille légionnaire." }]
-          },
-          contents: geminiHistory,
+          contents: messagesWithContext,
           generationConfig: {
             temperature: 0.7
           }
@@ -410,12 +417,12 @@ const ChatScreen: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Erreur API: ${response.status}`);
+        throw new Error(`Erreur serveur Gemini : ${response.status}`);
       }
 
       const data = await response.json();
       
-      // On extrait la réponse du format spécifique de Gemini
+      // 5. Extraction du texte de la réponse
       const aiResponse = data.candidates[0].content.parts[0].text;
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
@@ -424,7 +431,7 @@ const ChatScreen: React.FC = () => {
       console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: "Désolé, j'ai eu un problème de réseau. Pouvez-vous répéter votre question ?" 
+        content: "Désolé, ma connexion au serveur est perturbée. Pouvez-vous reposer votre question ?" 
       }]);
     } finally {
       setIsLoading(false);
