@@ -349,6 +349,8 @@ const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoa
 
 // --- ÉCRAN 3 : L'IA CHATBOT (Connecté proprement avec le SDK officiel) ---
 
+// --- ÉCRAN 3 : L'IA CHATBOT (Connecté à l'API) ---
+
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Bonjour ! Je suis SAIDA, votre expert agricole. Que se passe-t-il dans votre champ de maïs ou d'anacarde aujourd'hui ?" }
@@ -376,24 +378,41 @@ const ChatScreen: React.FC = () => {
         throw new Error("Clé API manquante dans les variables d'environnement");
       }
 
-      // CORRECTION 1 : On utilise le SDK officiel que vous avez importé !
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde."
-      });
-
-      // On formate l'historique sans le message d'accueil
-      const history = messages.slice(1).map(m => ({
+      const geminiHistory = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
-
-      // On lance la discussion
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessage(userMessage);
       
-      const aiResponse = result.response.text();
+      const messagesWithContext = [
+        { 
+          role: 'user', 
+          parts: [{ text: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde." }]
+        },
+        { 
+          role: 'model', 
+          parts: [{ text: "Compris. Je suis prête." }]
+        },
+        ...geminiHistory,
+        { role: 'user', parts: [{ text: userMessage }] }
+      ];
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: messagesWithContext,
+          generationConfig: { temperature: 0.7 }
+        })
+      });
+
+      if (!response.ok) {
+        const errorDetail = await response.json();
+        console.error("Erreur API détaillée :", errorDetail);
+        throw new Error(`Erreur ${response.status} : Vérifiez le nom du modèle ou la clé.`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.candidates[0].content.parts[0].text;
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
@@ -401,14 +420,14 @@ const ChatScreen: React.FC = () => {
       console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: `Désolé, j'ai eu un problème de connexion. Vérifiez la console.` 
+        content: `Désolé, j'ai une erreur (${error.message}). Vérifie ta configuration Vercel.` 
       }]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // FIN DE handleSendMessage (sans accolade en trop !)
 
-  // CORRECTION 2 : Il manquait l'affichage graphique du Chat !
+  // L'interface visuelle du Chat (qui manquait)
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
@@ -436,7 +455,7 @@ const ChatScreen: React.FC = () => {
           value={input} 
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          placeholder="Posez votre question à SAIDA..." 
+          placeholder="Posez votre question..." 
           className="flex-grow bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
         />
         <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="ml-2 bg-green-600 text-white p-2.5 rounded-full hover:bg-green-700 transition-colors">
@@ -448,13 +467,13 @@ const ChatScreen: React.FC = () => {
 };
 
 
-// --- CORRECTION 3 : IL MANQUAIT LE COMPOSANT PRINCIPAL (APP) ! ---
+// --- COMPOSANT PRINCIPAL DE L'APPLICATION (qui manquait) ---
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
-  // Fausses données pour que l'application ne plante pas
+  // Variables nécessaires pour que ça ne plante pas
   const location = { lat: 9.5217, lon: -6.4869, city: "Boundiali" };
   const weatherForecast: DailyWeather[] = []; 
   const isWeatherLoading = false;
@@ -470,17 +489,3 @@ export default function App() {
     </div>
   );
 }
-  };
-
-  return (
-    <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
-      <div className="flex-grow overflow-hidden relative">
-        {/* On transmet maintenant les vraies données au Dashboard et à la Météo ! */}
-        {activeTab === 'dashboard' && <DashboardScreen isProfileOpen={isProfileOpen} setIsProfileOpen={setIsProfileOpen} setActiveTab={setActiveTab} location={location} />}
-        {activeTab === 'weather' && <WeatherScreen location={location} forecast={weatherForecast} isLoading={isWeatherLoading} />}
-        {activeTab === 'chat' && <ChatScreen />}
-        {activeTab === 'alert' && <AlertScreen />}
-      </div>
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />
-    </div>
-  );
