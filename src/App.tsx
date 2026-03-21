@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Volume2, 
   AlertTriangle, Send, Sun, Cloud, Bug, Leaf, 
-  MapPin, ArrowLeft, Wind, CloudLightning, RefreshCcw,Locate,
-  CheckCircle, XCircle, Loader2
+  MapPin, ArrowLeft, Wind, CloudLightning, 
+  CheckCircle, XCircle, Loader2, Locate 
 } from 'lucide-react';
 
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
+// NOUVEAU : Ajout de useMap, Circle, et Marker ici
+import { MapContainer, TileLayer, Polygon, Popup, Circle, Marker, useMap } from 'react-leaflet';
 
 // --- 1. DÉFINITION DES TYPES ---
 type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
@@ -31,48 +32,27 @@ interface DailyWeather {
   actionType: string;
 }
 
+// --- OUTIL POUR RECENTRER LA CARTE DYNAMIQUEMENT ---
+const MapUpdater = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, 14, { animate: true, duration: 1.5 });
+  }, [center, map]);
+  return null;
+};
+
 // --- 2. FONCTIONS MÉTÉO VISUELLE ---
 const getWeatherVisuals = (code: number) => {
   if (code === 0 || code === 1) { 
-      return {
-          weatherImg: "https://img.freepik.com/photos-gratuite/beau-paysage-ciel-bleu_23-2151906820.jpg?w=740",
-          Icon: Sun,
-          actionImg: "https://img.freepik.com/photos-gratuite/recolte-du-riz-au-sri-lanka_23-2151940459.jpg?w=740",
-          actionType: "harvest",
-          ttsText: "Ciel dégagé et très ensoleillé. Moment idéal pour récolter."
-      };
+      return { weatherImg: "https://img.freepik.com/photos-gratuite/beau-paysage-ciel-bleu_23-2151906820.jpg?w=740", Icon: Sun, actionImg: "https://img.freepik.com/photos-gratuite/recolte-du-riz-au-sri-lanka_23-2151940459.jpg?w=740", actionType: "harvest", ttsText: "Ciel dégagé et très ensoleillé. Moment idéal pour récolter." };
   } else if (code === 2 || code === 3) { 
-      return {
-          weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?w=400",
-          Icon: Cloud,
-          actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg",
-          actionType: "sowing",
-          ttsText: "Ciel nuageux avec bonne humidité. Conditions parfaites pour semer."
-      };
+      return { weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?w=400", Icon: Cloud, actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg", actionType: "sowing", ttsText: "Ciel nuageux avec bonne humidité. Conditions parfaites pour semer." };
   } else if (code >= 50 && code <= 67) { 
-      return {
-          weatherImg: "https://img.freepik.com/vecteurs-libre/parapluie-rouge-sous-pluie_1284-11413.jpg?w=740",
-          Icon: CloudRain,
-          actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s",
-          actionType: "spray_no",
-          ttsText: "Pluie prévue. Ne faites aucune pulvérisation aujourd'hui."
-      };
+      return { weatherImg: "https://img.freepik.com/vecteurs-libre/parapluie-rouge-sous-pluie_1284-11413.jpg?w=740", Icon: CloudRain, actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", actionType: "spray_no", ttsText: "Pluie prévue. Ne faites aucune pulvérisation aujourd'hui." };
   } else if (code >= 80) { 
-      return {
-          weatherImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIMzaqG-lwT8wszF3lRYHXvVgI7FWrkEG3ng&s",
-          Icon: CloudLightning,
-          actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s",
-          actionType: "spray_no",
-          ttsText: "Alerte orages violents. Restez à l'abri et ne traitez pas vos parcelles."
-      };
+      return { weatherImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIMzaqG-lwT8wszF3lRYHXvVgI7FWrkEG3ng&s", Icon: CloudLightning, actionImg: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", actionType: "spray_no", ttsText: "Alerte orages violents. Restez à l'abri et ne traitez pas vos parcelles." };
   }
-  return { 
-      weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?w=400",
-      Icon: Cloud,
-      actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg",
-      actionType: "sowing",
-      ttsText: "Temps clément. Vous pouvez continuer vos activités normalement."
-  };
+  return { weatherImg: "https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?w=400", Icon: Cloud, actionImg: "https://img.freepik.com/photos-gratuite/gros-plan-photo-main-tenant-plantation-graine-plante_1150-28369.jpg", actionType: "sowing", ttsText: "Temps clément. Vous pouvez continuer vos activités normalement." };
 };
 
 // --- 3. COMPOSANTS DE NAVIGATION ---
@@ -88,26 +68,20 @@ const BottomNav: React.FC<{ activeTab: TabType, setActiveTab: (t: TabType) => vo
 const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void }> = ({ setIsProfileOpen }) => (
   <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
     <div className="bg-green-700 text-white p-4 pt-6 flex items-center font-bold text-lg sticky top-0"><button onClick={() => setIsProfileOpen(false)} className="mr-3 p-1.5 hover:bg-green-600 rounded-full"><ArrowLeft size={24} /></button>Mon Profil</div>
-    <div className="p-4"><div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" /><div><h2 className="font-bold text-gray-800 text-lg">SORO Wonnan</h2><p className="text-xs text-gray-500">Culture : Maïs & Anacarde</p></div></div></div>
+    <div className="p-4"><div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-16 h-16 rounded-full border-2 border-green-200 object-cover" /><div><h2 className="font-bold text-gray-800 text-lg">SORO Wonnan</h2><p className="text-xs text-gray-500">Culture : Maïs, Coton, Anacarde</p></div></div></div>
   </div>
 );
 
 const AlertScreen: React.FC = () => (
-  <div className="p-4 flex items-center justify-center h-full text-gray-500">
-    Page des alertes (En construction)
-  </div>
+  <div className="p-4 flex items-center justify-center h-full text-gray-500">Page des alertes (En construction)</div>
 );
 
 // --- 4. ÉCRAN DASHBOARD ---
-// --- 4. ÉCRAN DASHBOARD (Avec bouton de mise à jour GPS) ---
 const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void, location: LocationState }> = ({ isProfileOpen, setIsProfileOpen, setActiveTab, location }) => {
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
-  
-  // Position GPS de l'utilisateur (qui peut être en déplacement)
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
 
-  // Fonction pour forcer la mise à jour du GPS
   const actualiserGPS = () => {
     setIsLocating(true);
     if ("geolocation" in navigator) {
@@ -119,8 +93,8 @@ const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: 
         (error) => {
           console.error("Erreur GPS:", error);
           setIsLocating(false);
+          alert("Impossible d'obtenir la position. Avez-vous autorisé le GPS ?");
         },
-        // Ces options forcent le téléphone à chercher la vraie position satellite sans utiliser la mémoire cache
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } 
       );
     } else {
@@ -128,14 +102,13 @@ const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: 
     }
   };
 
-  // Au chargement, on cherche la position une première fois
   useEffect(() => {
-    actualiserGPS();
-  }, []);
+    // On met la position par défaut sur Boundiali d'abord
+    setUserPos([location.lat, location.lon]);
+  }, [location.lat, location.lon]);
 
   if (isProfileOpen) return <AccountScreen setIsProfileOpen={setIsProfileOpen} />;
 
-  // Coordonnées fixes des parcelles (Elles ne bougent jamais)
   const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
   const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
   const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
@@ -143,52 +116,35 @@ const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 pointer-events-none">
-        <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto">
-          <MapPin size={16} className="text-red-400 animate-bounce" />
-          <span className="text-white font-bold text-xs">Parcelles : {location.city}</span>
-        </div>
-        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto">
-          <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" />
-        </button>
+        <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">Parcelles : {location.city}</span></div>
+        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
       </div>
       
       <div className="relative h-[45%] min-h-[320px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
-        <MapContainer center={userPos || [location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
+        <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           
-          {/* Position de l'agriculteur (en bleu) */}
+          {userPos && <MapUpdater center={userPos} />}
+          
           {userPos && (
             <>
               <Circle center={userPos} radius={2000} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15 }} />
-              <Marker position={userPos}>
-                <Popup>Votre position actuelle</Popup>
-              </Marker>
+              <Marker position={userPos}><Popup>Votre position actuelle</Popup></Marker>
             </>
           )}
 
-          {/* Les 3 Parcelles fixes (Maïs, Coton, Anacarde) */}
           <Polygon positions={polyMais} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.5 }}><Popup>Parcelle 1 : Maïs</Popup></Polygon>
           <Polygon positions={polyCoton} pathOptions={{ color: '#e2e8f0', fillColor: '#ffffff', fillOpacity: 0.6 }}><Popup>Parcelle 2 : Coton</Popup></Polygon>
           <Polygon positions={polyAnacarde} pathOptions={{ color: '#ea580c', fillColor: '#ea580c', fillOpacity: 0.5 }}><Popup>Parcelle 3 : Anacarde</Popup></Polygon>
         </MapContainer>
         
-        {/* NOUVEAU : Bouton pour rafraîchir le GPS */}
-        <button 
-          onClick={actualiserGPS}
-          disabled={isLocating}
-          className="absolute bottom-20 right-3 bg-white/95 rounded-full shadow-xl p-3 border-2 border-blue-500 flex items-center justify-center text-blue-600 pointer-events-auto transition-transform active:scale-95" 
-          style={{ zIndex: 1000 }}
-        >
+        <button onClick={actualiserGPS} disabled={isLocating} className="absolute bottom-20 right-3 bg-white/95 rounded-full shadow-xl p-3 border-2 border-blue-500 flex items-center justify-center text-blue-600 pointer-events-auto transition-transform active:scale-95" style={{ zIndex: 1000 }}>
           {isLocating ? <Loader2 className="animate-spin" size={24} /> : <Locate size={24} />}
         </button>
 
-        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none" style={{ zIndex: 1000 }}>
-          <div className="bg-green-100 p-2 rounded-full"><Leaf className="text-green-600" size={24} /></div>
-          <div className="flex flex-col"><p className="text-[10px] text-gray-500 font-bold uppercase leading-none mb-1">Santé Globale</p><p className="text-2xl font-black text-gray-800 leading-none">85%</p></div>
-        </div>
+        <div className="absolute bottom-6 left-3 bg-white/95 rounded-2xl shadow-xl p-3 border-2 border-green-500 flex items-center space-x-3 pointer-events-none" style={{ zIndex: 1000 }}><div className="bg-green-100 p-2 rounded-full"><Leaf className="text-green-600" size={24} /></div><div className="flex flex-col"><p className="text-[10px] text-gray-500 font-bold uppercase leading-none mb-1">Santé Globale</p><p className="text-2xl font-black text-gray-800 leading-none">85%</p></div></div>
       </div>
 
-      {/* Le reste des cartes du tableau de bord */}
       <div className="p-4 pt-6 space-y-6">
         <div>
           <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs ({location.city})</h3>
@@ -206,31 +162,22 @@ const DashboardScreen: React.FC<{ isProfileOpen: boolean, setIsProfileOpen: (o: 
       </div>
       
       {selectedCrop && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
-            <h3 className="text-xl font-black mb-3">Détails : {selectedCrop}</h3>
-            <p className="text-gray-600 mb-4">Analyse NDVI et alertes spécifiques pour la parcelle de {selectedCrop.toLowerCase()}...</p>
-            <button onClick={() => setSelectedCrop(null)} className="w-full bg-green-100 text-green-800 py-3 rounded-xl font-bold hover:bg-green-200">Fermer</button>
-          </div>
-        </div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60"><div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative"><h3 className="text-xl font-black mb-3">Détails : {selectedCrop}</h3><p className="text-gray-600 mb-4">Analyse NDVI et alertes spécifiques pour la parcelle de {selectedCrop.toLowerCase()}...</p><button onClick={() => setSelectedCrop(null)} className="w-full bg-green-100 text-green-800 py-3 rounded-xl font-bold hover:bg-green-200">Fermer</button></div></div>
       )}
     </div>
   );
 };
 
-// --- 5. ÉCRAN MÉTÉO (Sur 7 Jours avec synthèse vocale) ---
+// --- 5. ÉCRAN MÉTÉO ---
 const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
   const [speakingId, setSpeakingId] = useState<number | null>(null);
 
   const speak = (id: number, dayName: string, text: string, temp: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const fullText = `Prévisions pour ${dayName} à ${location.city}. Température de ${temp}. ${text}`;
-      const utterance = new SpeechSynthesisUtterance(fullText);
+      const utterance = new SpeechSynthesisUtterance(`Prévisions pour ${dayName} à ${location.city}. Température de ${temp}. ${text}`);
       utterance.lang = 'fr-FR'; utterance.rate = 0.9;
-      utterance.onstart = () => setSpeakingId(id);
-      utterance.onend = () => setSpeakingId(null);
-      utterance.onerror = () => setSpeakingId(null);
+      utterance.onstart = () => setSpeakingId(id); utterance.onend = () => setSpeakingId(null); utterance.onerror = () => setSpeakingId(null);
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -246,20 +193,8 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
             <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm uppercase">{day.day}</div>
             <button onClick={() => speak(day.id, day.day, day.ttsText || "", day.temp)} className={`absolute top-10 right-2 z-50 p-2 rounded-full shadow-lg ${speakingId === day.id ? 'bg-green-500 text-white animate-pulse scale-110' : 'bg-white/80 text-green-700'}`}><Volume2 size={24} /></button>
             <div className="flex h-36">
-              <div className="w-1/2 relative border-r-2 border-white">
-                <img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                <div className="absolute top-2 left-2 flex items-center"><day.Icon className="text-white mr-1.5" size={20} /><span className="text-2xl font-black text-white leading-none">{day.temp}</span></div>
-                <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded flex items-center"><Wind className="text-blue-300 mr-1.5" size={14} /><span className="text-xs font-bold text-white">{day.wind}</span></div>
-              </div>
-              <div className="w-1/2 relative border-l-2 border-white">
-                <img src={day.actionImg} alt="Action" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  {day.actionType === 'spray_no' && <div className="bg-white rounded-full p-1"><XCircle size={64} className="text-red-600 drop-shadow-xl" /></div>}
-                  {day.actionType === 'sowing' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-green-800 border-2 border-green-500 shadow-xl -rotate-12 uppercase">Semer</div>}
-                  {day.actionType === 'harvest' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-orange-800 border-2 border-orange-500 shadow-xl -rotate-12 uppercase">Récolter</div>}
-                </div>
-              </div>
+              <div className="w-1/2 relative border-r-2 border-white"><img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div><div className="absolute top-2 left-2 flex items-center"><day.Icon className="text-white mr-1.5" size={20} /><span className="text-2xl font-black text-white leading-none">{day.temp}</span></div><div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded flex items-center"><Wind className="text-blue-300 mr-1.5" size={14} /><span className="text-xs font-bold text-white">{day.wind}</span></div></div>
+              <div className="w-1/2 relative border-l-2 border-white"><img src={day.actionImg} alt="Action" className="w-full h-full object-cover" /><div className="absolute inset-0 flex items-center justify-center bg-black/20">{day.actionType === 'spray_no' && <div className="bg-white rounded-full p-1"><XCircle size={64} className="text-red-600 drop-shadow-xl" /></div>}{day.actionType === 'sowing' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-green-800 border-2 border-green-500 shadow-xl -rotate-12 uppercase">Semer</div>}{day.actionType === 'harvest' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-orange-800 border-2 border-orange-500 shadow-xl -rotate-12 uppercase">Récolter</div>}</div></div>
             </div>
           </div>
         ))}
@@ -268,7 +203,7 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
   );
 };
 
-// --- 6. ÉCRAN CHAT IA (AVEC LE SDK OFFICIEL !) ---
+// --- 6. ÉCRAN CHAT IA ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
   const [input, setInput] = useState('');
@@ -288,26 +223,18 @@ const ChatScreen: React.FC = () => {
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
       if (!API_KEY) throw new Error("Clé API manquante");
 
-      // UTILISATION CORRECTE DU SDK (Pas de fetch = Pas d'erreur 404 !)
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
-        systemInstruction: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde."
+        systemInstruction: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs, coton et anacarde."
       });
 
-      const history = messages.slice(1).map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
-
+      const history = messages.slice(1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const chat = model.startChat({ history });
       const result = await chat.sendMessage(userMessage);
-      const aiResponse = result.response.text();
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
-
+      
+      setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
     } catch (error: any) {
-      console.error("Erreur Gemini:", error);
       setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème de connexion IA : ${error.message}` }]);
     } finally {
       setIsLoading(false);
@@ -318,65 +245,45 @@ const ChatScreen: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50">
       <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
         {messages.map((msg, index) => (
-          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border shadow-sm rounded-bl-none'}`}>{msg.content}</div>
-          </div>
+          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border shadow-sm rounded-bl-none'}`}>{msg.content}</div></div>
         ))}
         {isLoading && <div className="flex justify-start"><div className="bg-white p-3 rounded-2xl border shadow-sm flex items-center space-x-2"><Loader2 className="animate-spin text-green-600" size={16} /><span className="text-sm">SAIDA réfléchit...</span></div></div>}
         <div ref={messagesEndRef} />
       </div>
-      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t flex items-center z-10">
-        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Posez votre question à SAIDA..." className="flex-grow bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none" />
-        <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="ml-2 bg-green-600 text-white p-2.5 rounded-full"><Send size={18} /></button>
-      </div>
+      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t flex items-center z-10"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Posez votre question à SAIDA..." className="flex-grow bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none" /><button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="ml-2 bg-green-600 text-white p-2.5 rounded-full"><Send size={18} /></button></div>
     </div>
   );
 };
 
-// --- 7. APPLICATION PRINCIPALE (Avec récupération API Météo) ---
+// --- 7. APPLICATION PRINCIPALE ---
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
-  // Coordonnées de Boundiali
   const location = { lat: 9.5217, lon: -6.4869, city: "Boundiali" };
   const [weatherForecast, setWeatherForecast] = useState<DailyWeather[]>([]);
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
 
-  // Moteur de récupération de la météo sur 7 jours via Open-Meteo
   useEffect(() => {
     const fetchWeather = async () => {
       try {
         const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weathercode,temperature_2m_max,windspeed_10m_max&timezone=auto`);
         const data = await response.json();
-
-        // On transforme les données brutes en liste pour nos 7 jours
         const formattedForecast = data.daily.time.map((date: string, index: number) => {
           const code = data.daily.weathercode[index];
           const temp = data.daily.temperature_2m_max[index];
           const wind = data.daily.windspeed_10m_max[index];
-          
           const visuals = getWeatherVisuals(code);
           const dateObj = new Date(date);
           const dayName = index === 0 ? "Aujourd'hui" : index === 1 ? "Demain" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
-
-          return {
-            id: index,
-            day: dayName,
-            temp: `${temp}°C`,
-            wind: `${wind} km/h`,
-            ...visuals
-          };
-        }).slice(0, 7); // On garde strictement les 7 jours
-
+          return { id: index, day: dayName, temp: `${temp}°C`, wind: `${wind} km/h`, ...visuals };
+        }).slice(0, 7);
         setWeatherForecast(formattedForecast);
       } catch (error) {
-        console.error("Erreur lors de la récupération de la météo:", error);
+        console.error("Erreur météo:", error);
       } finally {
         setIsWeatherLoading(false);
       }
     };
-
     fetchWeather();
   }, [location.lat, location.lon]);
 
