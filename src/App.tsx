@@ -349,21 +349,7 @@ const WeatherScreen: React.FC<WeatherScreenProps> = ({ location, forecast, isLoa
 
 // --- ÉCRAN 3 : L'IA CHATBOT (Connecté proprement avec le SDK officiel) ---
 
-// --- ÉCRAN 3 : L'IA CHATBOT (Connecté à l'API) ---
-
-const ChatScreen: React.FC = () => {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Bonjour ! Je suis SAIDA, votre expert agricole. Que se passe-t-il dans votre champ de maïs ou d'anacarde aujourd'hui ?" }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSendMessage = async () => {
+const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = input;
@@ -375,44 +361,29 @@ const ChatScreen: React.FC = () => {
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
-        throw new Error("Clé API manquante dans les variables d'environnement");
+        throw new Error("Clé API manquante");
       }
 
-      const geminiHistory = messages.map(m => ({
+      // 1. On utilise le SDK officiel plutôt que l'URL manuelle "fetch" !
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      
+      // 2. On configure le modèle et la personnalité de SAIDA directement ici
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde."
+      });
+
+      // 3. On prépare l'historique (en enlevant le premier message d'accueil)
+      const history = messages.slice(1).map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
+
+      // 4. On lance la discussion
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(userMessage);
       
-      const messagesWithContext = [
-        { 
-          role: 'user', 
-          parts: [{ text: "Tu es SAIDA, expert agricole à Boundiali. Réponds en 2 phrases max. Spécialité : maïs et anacarde." }]
-        },
-        { 
-          role: 'model', 
-          parts: [{ text: "Compris. Je suis prête." }]
-        },
-        ...geminiHistory,
-        { role: 'user', parts: [{ text: userMessage }] }
-      ];
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: messagesWithContext,
-          generationConfig: { temperature: 0.7 }
-        })
-      });
-
-      if (!response.ok) {
-        const errorDetail = await response.json();
-        console.error("Erreur API détaillée :", errorDetail);
-        throw new Error(`Erreur ${response.status} : Vérifiez le nom du modèle ou la clé.`);
-      }
-
-      const data = await response.json();
-      const aiResponse = data.candidates[0].content.parts[0].text;
+      const aiResponse = result.response.text();
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
@@ -420,12 +391,12 @@ const ChatScreen: React.FC = () => {
       console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: `Désolé, j'ai une erreur (${error.message}). Vérifie ta configuration Vercel.` 
+        content: `Désolé, j'ai rencontré un problème : ${error.message}` 
       }]);
     } finally {
       setIsLoading(false);
     }
-  }; // FIN DE handleSendMessage (sans accolade en trop !)
+  };
 
   // L'interface visuelle du Chat (qui manquait)
   return (
