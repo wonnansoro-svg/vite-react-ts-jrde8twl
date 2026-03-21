@@ -364,7 +364,7 @@ const ChatScreen: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
- const handleSendMessage = async () => {
+const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = input;
@@ -373,7 +373,7 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Récupération de la clé depuis Vercel
+      // 1. Récupération de la clé depuis l'environnement
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
@@ -383,35 +383,55 @@ const ChatScreen: React.FC = () => {
         return;
       }
 
-      // 2. Importation dynamique du SDK officiel Google
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      
-      // 3. LE CORRECTIF EST ICI : Utilisation du modèle 1.5-flash actuel
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire."
-      });
-
-      // 4. Formatage de l'historique (sans le message d'accueil)
-      const history = messages.slice(1).map(m => ({
+      // 2. Préparation de l'historique des messages
+      const geminiHistory = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
-
-      // 5. Envoi du message au bon serveur Google
-      const chat = model.startChat({ history });
-      const result = await chat.sendMessage(userMessage);
       
-      const aiResponse = result.response.text();
+      geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      // 3. Le contexte (Cerveau de SAIDA)
+      const messagesWithContext = [
+        { 
+          role: 'user', 
+          parts: [{ text: "Consigne stricte pour la suite de la conversation : Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire. Compris ?" }]
+        },
+        { 
+          role: 'model', 
+          parts: [{ text: "Compris. Je suis SAIDA. Je ferai des réponses courtes et expertes pour aider les agriculteurs ivoiriens." }]
+        },
+        ...geminiHistory
+      ];
+
+      // 4. L'URL CORRIGÉE avec le modèle "gemini-1.5-flash-latest" 👇
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: messagesWithContext,
+          generationConfig: {
+            temperature: 0.7
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur serveur Gemini : ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // 5. Extraction du texte de la réponse
+      const aiResponse = data.candidates[0].content.parts[0].text;
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
     } catch (error) {
-      console.error("ERREUR DÉTAILLÉE DE L'IA :", error);
+      console.error("Erreur de l'IA Gemini:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: "Désolé, ma connexion au serveur a échoué. Vérifiez la console." 
+        content: "Désolé, ma connexion au serveur est perturbée. Pouvez-vous reposer votre question ?" 
       }]);
     } finally {
       setIsLoading(false);
