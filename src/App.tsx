@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Polygon, Popup, useMap } from 'react-leaflet';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import { MapContainer, TileLayer, Polygon, Popup, useMap, FeatureGroup } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
 
 // --- 1. DÉFINITION DES TYPES ---
 type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
@@ -223,12 +225,38 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
       </div>
       
       <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
+        <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
         <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-          <Polygon positions={polyMais} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.5 }}><Popup>Parcelle 1 : Maïs</Popup></Polygon>
-          <Polygon positions={polyCoton} pathOptions={{ color: '#e2e8f0', fillColor: '#ffffff', fillOpacity: 0.6 }}><Popup>Parcelle 2 : Coton</Popup></Polygon>
-          <Polygon positions={polyAnacarde} pathOptions={{ color: '#ea580c', fillColor: '#ea580c', fillOpacity: 0.5 }}><Popup>Parcelle 3 : Anacarde</Popup></Polygon>
+          
+          {/* NOUVEAU : LA ZONE DE DESSIN */}
+          <FeatureGroup>
+            <EditControl
+              position="topright"
+              onCreated={(e: any) => {
+                // Quand l'agriculteur a fini de dessiner, on récupère les coordonnées GPS !
+                const layer = e.layer;
+                const coordinates = layer.getLatLngs();
+                console.log("Nouvelle parcelle dessinée :", coordinates);
+                alert("Super ! Votre parcelle a été dessinée. Nous avons récupéré ses coordonnées GPS.");
+              }}
+              draw={{
+                rectangle: false, // On désactive le rectangle
+                circle: false,    // On désactive le cercle
+                circlemarker: false, // On désactive le marqueur
+                marker: false,    // On désactive le pin simple
+                polyline: false,  // On désactive la ligne simple
+                polygon: {
+                  allowIntersection: false, // Empêche de faire des polygones croisés bizarres
+                  drawError: { color: '#e1e100', message: '<strong>Erreur:</strong> les bords ne peuvent pas se croiser!' },
+                  shapeOptions: { color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.5 } // Couleur verte du champ
+                }
+              }}
+            />
+          </FeatureGroup>
+
         </MapContainer>
+      </div>
       </div>
 
       <div className="px-4 mt-5 -mb-2">
