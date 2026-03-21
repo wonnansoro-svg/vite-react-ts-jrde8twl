@@ -355,10 +355,11 @@ const ChatScreen: React.FC = () => {
 
     try {
       // 2. RÉCUPÉRATION DE LA CLÉ API
-      const API_KEY = import.meta.env.VITE; 
+      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
       if (!API_KEY) {
-        throw new Error("Clé API introuvable. Vérifiez votre fichier .env");
+        throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
       }
+      
 
       // 3. INITIALISATION DE GEMINI
       const genAI = new GoogleGenerativeAI(API_KEY);
@@ -550,3 +551,4 @@ export default function App() {
     </div>
   );
 }
+ 
