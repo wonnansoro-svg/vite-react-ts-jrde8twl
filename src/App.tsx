@@ -1,4 +1,4 @@
-
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import React, { useState, useEffect } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Camera, Volume2, PhoneCall, 
@@ -373,66 +373,44 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Récupération de la clé depuis Vercel
+      // 1. Récupération de la clé depuis l'environnement
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
       if (!API_KEY) {
         console.error("Clé API manquante !");
-        setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur technique : Clé API non trouvée." }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: "Erreur : Clé API non trouvée." }]);
         setIsLoading(false);
         return;
       }
 
-      // 2. Préparation de l'historique des messages au format strict de Gemini
-      const geminiHistory = messages.map(m => ({
+      // 2. Initialisation de l'IA officielle de Google
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      
+      // On utilise le modèle flash actuel et on lui donne son "Cerveau" (System Instruction)
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire."
+      });
+
+      // 3. Formatage de l'historique de la conversation (on ignore le premier message d'accueil)
+      const history = messages.slice(1).map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
+
+      // 4. Envoi du message via l'outil officiel
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(userMessage);
       
-      geminiHistory.push({ role: 'user', parts: [{ text: userMessage }] });
-
-      // 3. L'astuce anti-bug : on intègre le rôle de SAIDA directement comme un premier échange invisible
-      const messagesWithContext = [
-        { 
-          role: 'user', 
-          parts: [{ text: "Consigne stricte pour la suite de la conversation : Tu es SAIDA, un assistant agricole expert en Côte d'Ivoire. Tu aides les agriculteurs de la région de Boundiali. Fais des réponses TRÈS COURTES (2 ou 3 phrases max). Tes spécialités : maïs, anacarde, météo, et lutte contre la chenille légionnaire. Compris ?" }]
-        },
-        { 
-          role: 'model', 
-          parts: [{ text: "Compris. Je suis ton assistant agricole. Je ferai des réponses courtes et expertes pour aider les agriculteurs ivoiriens." }]
-        },
-        ...geminiHistory
-      ];
-
-      // 4. Appel avec "gemini-1.5-flash-latest" qui résout l'erreur 404
-      // Remplacez votre ancienne ligne fetch par celle-ci :
-const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: messagesWithContext,
-          generationConfig: {
-            temperature: 0.7
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erreur serveur Gemini : ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // 5. Extraction du texte de la réponse
-      const aiResponse = data.candidates[0].content.parts[0].text;
+      const aiResponse = result.response.text();
 
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
 
     } catch (error) {
-      console.error("Erreur de l'IA Gemini:", error);
+      console.error("Erreur détaillée de l'IA:", error);
       setMessages((prev) => [...prev, { 
         role: 'assistant', 
-        content: "Désolé, ma connexion au serveur est perturbée. Pouvez-vous reposer votre question ?" 
+        content: "Désolé, ma connexion au serveur d'intelligence artificielle a échoué. Vérifiez la clé API." 
       }]);
     } finally {
       setIsLoading(false);
