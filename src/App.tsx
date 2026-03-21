@@ -392,11 +392,20 @@ const ChatScreen: React.FC = () => {
       // 6. AFFICHAGE DE LA RÉPONSE DE L'IA
       setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
       
-    } catch (error: any) {
+     } catch (error: any) {
       console.error("Détails de l'erreur API :", error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème de connexion à l'IA : ${error.message}` }]);
+      
+      let errorMessage = `Désolé, problème de connexion à l'IA : ${error.message}`;
+      
+      // 💡 NOUVEAU : On intercepte l'erreur 429 pour afficher un message poli !
+      if (error.message.includes("429") || error.message.includes("quota")) {
+        errorMessage = "Oups, SAIDA est très sollicitée par d'autres agriculteurs en ce moment ! Veuillez patienter environ une minute avant de renvoyer votre message. ⏳";
+      }
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: errorMessage }]);
     } finally { 
       setIsLoading(false); 
+    }
     }
   };
 
@@ -484,8 +493,8 @@ export default function App() {
         },
         (error) => {
           console.error("Erreur GPS:", error);
-          alert("GPS refusé ou introuvable. Boundiali utilisé par défaut.");
-          const defaultLoc = { lat: 9.5217, lon: -6.4869, city: "Boundiali" };
+          alert("GPS refusé ou introuvable. Korhogo utilisé par défaut.");
+          const defaultLoc = { lat: 9.5217, lon: -6.4869, city: "Korhogo" };
           setFarmLocation(defaultLoc);
           localStorage.setItem('farmLocation', JSON.stringify(defaultLoc));
           setIsLocatingFarm(false);
