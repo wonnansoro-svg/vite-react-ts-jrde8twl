@@ -128,6 +128,11 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
                 <li className="flex items-center"><Check size={14} className="text-yellow-600 mr-1"/> Assistance agronome 24/7</li>
               </ul>
               {currentPlan !== 'premium' && <button onClick={() => setCurrentPlan('premium')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600">Mettre à niveau</button>}
+              {/* Ligne existante pour le Premium : */}
+            {currentPlan === 'premium' && <span className="inline-flex items-center bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"><Crown size={12} className="mr-1" /> Membre Premium</span>}
+            
+            {/* NOUVELLE LIGNE À AJOUTER POUR LA COOPÉRATIVE : */}
+            {currentPlan === 'expert' && <span className="inline-flex items-center bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"><Star size={12} className="mr-1" /> Coopérative Expert</span>}
             </div>
           </div>
         </div>
