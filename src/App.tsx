@@ -63,7 +63,7 @@ const BottomNav: React.FC<{ activeTab: TabType, setActiveTab: (t: TabType) => vo
 
 const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdateLocation: () => void }> = ({ setIsProfileOpen, onUpdateLocation }) => {
   const [currentPlan, setCurrentPlan] = useState('premium');
-  const supportNumber = "22500000000"; // Numéro d'assistance à modifier
+  const supportNumber = "2250778014537"; // Numéro d'assistance à modifier
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto z-40 relative pb-20">
@@ -130,7 +130,7 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
               {currentPlan !== 'premium' && <button onClick={() => setCurrentPlan('premium')} className="mt-4 w-full py-2.5 rounded-xl font-bold text-white bg-yellow-500 hover:bg-yellow-600">Mettre à niveau</button>}
               
             </div>
-            //--- abonnement des cooperative---
+
             <div className={`relative p-5 rounded-2xl border-2 transition-all ${currentPlan === 'cooperative' ? 'border-green-600 bg-green-50 shadow-md' : 'border-gray-200 bg-white'}`}>
               {currentPlan === 'cooperative' && <div className="absolute -top-3 right-4 bg-green-600 text-green-900 text-[10px] font-black px-3 py-1 rounded-full uppercase flex items-center"><Star size={12} className="mr-1"/> Actuel</div>}
               <h4 className="font-black text-gray-800 text-lg flex items-center">Coopérative <Star size={18} className="ml-2 text-green-500"/></h4>
@@ -335,7 +335,7 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
   );
 };
 
-// --- 7. ÉCRAN CHAT IA ---
+// --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
   const [input, setInput] = useState('');
@@ -348,17 +348,30 @@ const ChatScreen: React.FC = () => {
     if (!input.trim()) return;
     const userMessage = input;
     setInput('');
+    
+    // 1. On affiche le message de l'utilisateur immédiatement
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
     try {
+      // 2. RÉCUPÉRATION DE LA CLÉ API
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
-      if (!API_KEY) throw new Error("Clé API manquante");
+      if (!API_KEY) {
+        throw new Error("Clé API introuvable. Vérifiez votre fichier .env");
+      }
 
+      // 3. INITIALISATION DE GEMINI
       const genAI = new GoogleGenerativeAI(API_KEY);
+      // Utilisation du modèle standard recommandé par Google
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      const history = messages.slice(1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+      // 4. PRÉPARATION DE L'HISTORIQUE
+      const history = messages.slice(1).map(m => ({ 
+        role: m.role === 'assistant' ? 'model' : 'user', 
+        parts: [{ text: m.content }] 
+      }));
+
+      // 5. CONNEXION ET ENVOI À L'API
       const chat = model.startChat({ 
         history: [
           { role: 'user', parts: [{ text: "Tu es SAIDA, expert agricole en Côte d'Ivoire. Réponds en 2 phrases max." }] },
@@ -368,23 +381,56 @@ const ChatScreen: React.FC = () => {
       });
 
       const result = await chat.sendMessage(userMessage);
+      
+      // 6. AFFICHAGE DE LA RÉPONSE DE L'IA
       setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
       
     } catch (error: any) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème IA : ${error.message}.` }]);
-    } finally { setIsLoading(false); }
+      console.error("Détails de l'erreur API :", error);
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Désolé, problème de connexion à l'IA : ${error.message}` }]);
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
         {messages.map((msg, index) => (
-          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border shadow-sm rounded-bl-none'}`}>{msg.content}</div></div>
+          <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border shadow-sm rounded-bl-none'}`}>
+              {msg.content}
+            </div>
+          </div>
         ))}
-        {isLoading && <div className="flex justify-start"><div className="bg-white p-3 rounded-2xl border shadow-sm flex items-center space-x-2"><Loader2 className="animate-spin text-green-600" size={16} /><span className="text-sm">SAIDA réfléchit...</span></div></div>}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white p-3 rounded-2xl border shadow-sm flex items-center space-x-2 rounded-bl-none">
+              <Loader2 className="animate-spin text-green-600" size={16} />
+              <span className="text-sm">SAIDA réfléchit...</span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t flex items-center z-10"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Posez votre question à SAIDA..." className="flex-grow bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none" /><button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="ml-2 bg-green-600 text-white p-2.5 rounded-full"><Send size={18} /></button></div>
+      
+      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t flex items-center z-10">
+        <input 
+          type="text" 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)} 
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} 
+          placeholder="Posez votre question à SAIDA..." 
+          className="flex-grow bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none" 
+        />
+        <button 
+          onClick={handleSendMessage} 
+          disabled={isLoading || !input.trim()} 
+          className="ml-2 bg-green-600 text-white p-2.5 rounded-full disabled:bg-gray-400"
+        >
+          <Send size={18} />
+        </button>
+      </div>
     </div>
   );
 };
