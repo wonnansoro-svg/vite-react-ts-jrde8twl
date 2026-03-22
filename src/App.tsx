@@ -97,6 +97,10 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
             </a>
           </div>
         </div>
+
+        <button onClick={() => { localStorage.removeItem('champ_agriculteur_poly');localStorage.removeItem('champ_agriculteur_ndvi');
+                window.location.reload(); // Rafraîchit l'application
+                           }}> Effacer mon champ</button>
         
         {/* GESTION GPS */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -190,15 +194,24 @@ const AlertScreen: React.FC = () => {
 // --- 5. ÉCRAN DASHBOARD ---
 const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: string) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
   
-  // 1. LE CERVEAU (Les variables et la mémoire - TOUT EST EN HAUT !)
   const [selectedCrop, setSelectedCrop] = React.useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   
-  // NOUVEAU : Mémoire pour l'image satellite (Bien placée cette fois !)
   const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
   const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
 
-  // Les faux polygones (pour l'exemple)
+  // NOUVEAU : Mémoire pour le dessin du champ
+  const [savedPolygon, setSavedPolygon] = React.useState<[number, number][] | null>(null);
+
+  // NOUVEAU : Au chargement de l'écran, on regarde si on a gardé le champ en mémoire
+  React.useEffect(() => {
+    const memoryPoly = localStorage.getItem('champ_agriculteur_poly');
+    const memoryNdvi = localStorage.getItem('champ_agriculteur_ndvi');
+    
+    if (memoryPoly) setSavedPolygon(JSON.parse(memoryPoly));
+    if (memoryNdvi) setNdviOverlay(JSON.parse(memoryNdvi));
+  }, []);
+
   const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
   const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
   const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
@@ -224,7 +237,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
     }
   };
 
-  // 2. LE VISAGE (L'affichage HTML - Commence avec le return)
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
@@ -232,38 +244,37 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto shadow-md"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
       </div>
       
-      {/* LA CARTE ET LE DESSIN */}
       <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
         <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           
-          {/* NOUVEAU : Outils de dessin pour le NDVI */}
           <FeatureGroup>
+            {/* NOUVEAU : position="bottomleft" pour ne plus superposer avec le profil */}
             <EditControl
-              position="topright"
+              position="bottomleft"
               onCreated={async (e: any) => {
                 const layer = e.layer;
                 const bounds = layer.getBounds();
                 
-                // 1. Calcul de la zone rectangulaire
                 const leafletBounds = [
                   [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
                   [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
                 ];
 
-                // 2. Conversion des coordonnées
                 const latlngs = layer.getLatLngs()[0];
                 const geoJsonCoords = latlngs.map((coord: any) => [coord.lng, coord.lat]);
-                geoJsonCoords.push(geoJsonCoords[0]); // Fermer le polygone
+                geoJsonCoords.push(geoJsonCoords[0]); 
+                
+                // Préparation du dessin pour la sauvegarde visuelle
+                const displayPoly = latlngs.map((coord: any) => [coord.lat, coord.lng]);
 
                 setIsLoadingNdvi(true);
-                alert("📡 Demande envoyée au satellite... Calcul de la santé de vos plantes (NDVI) en cours !");
+                alert("📡 Demande envoyée au satellite... Calcul en cours !");
 
                 try {
-                  // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE
-                  const API_KEY = "d932a8e0b9840a95a7078a6cfe7faedc"; 
+                  // ⚠️ REMETTRE VOTRE CLÉ AGROMONITORING ICI
+                  const API_KEY = "VOTRE_CLE_AGROMONITORING_ICI"; 
 
-                  // ÉTAPE A : Créer la parcelle
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -274,9 +285,8 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                   });
 
                   const polyData = await polyResponse.json();
-                  if (!polyData.id) throw new Error("Erreur de création du champ");
+                  if (!polyData.id) throw new Error("Erreur");
 
-                  // ÉTAPE B : Récupérer les images (30 derniers jours)
                   const end = Math.floor(Date.now() / 1000);
                   const start = end - (30 * 24 * 60 * 60);
 
@@ -286,14 +296,22 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                   if (imgData && imgData.length > 0) {
                     const latestImage = imgData[imgData.length - 1];
                     const ndviUrl = latestImage.image.ndvi;
-                    setNdviOverlay({ url: ndviUrl, bounds: leafletBounds });
-                    alert("✅ Analyse terminée !");
+                    
+                    // NOUVEAU : On sauvegarde dans la mémoire du téléphone/navigateur
+                    const ndviData = { url: ndviUrl, bounds: leafletBounds };
+                    setNdviOverlay(ndviData);
+                    setSavedPolygon(displayPoly);
+                    
+                    localStorage.setItem('champ_agriculteur_ndvi', JSON.stringify(ndviData));
+                    localStorage.setItem('champ_agriculteur_poly', JSON.stringify(displayPoly));
+                    
+                    alert("✅ Analyse terminée ! Le champ est sauvegardé sur votre carte.");
                   } else {
                     alert("Nuages détectés ☁️. Aucune image satellite claire n'est disponible.");
                   }
                 } catch (error) {
                   console.error("Erreur Satellite:", error);
-                  alert("❌ Impossible de contacter le satellite. Avez-vous entré votre clé API ?");
+                  alert("❌ Impossible de contacter le satellite.");
                 } finally {
                   setIsLoadingNdvi(false);
                 }
@@ -305,7 +323,11 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
             />
           </FeatureGroup>
 
-          {/* Affichage de l'image satellite si elle a été téléchargée */}
+          {/* NOUVEAU : Si un champ est en mémoire, on redessine ses contours */}
+          {savedPolygon && (
+            <Polygon positions={savedPolygon} pathOptions={{ color: '#22c55e', fillOpacity: 0.1, weight: 2 }} />
+          )}
+
           {ndviOverlay && (
             <ImageOverlay url={ndviOverlay.url} bounds={ndviOverlay.bounds} opacity={0.8} />
           )}
@@ -313,7 +335,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </MapContainer>
       </div>
 
-      {/* Reste de votre interface... */}
       <div className="px-4 mt-5 -mb-2">
         <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded-xl shadow-sm flex flex-col items-start relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg">URGENCE</div>
@@ -341,7 +362,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </div>
       </div>
       
-      {/* Fenêtre modale des détails de la culture */}
       {selectedCrop && cropData[selectedCrop] && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
@@ -473,7 +493,7 @@ const ChatScreen: React.FC = () => {
 
     try {
       // ⚠️ REMPLACEZ CETTE CLÉ PAR VOTRE CLÉ GOOGLE GEMINI
-      const API_KEY = "VOTRE_CLE_GEMINI_ICI"; 
+      const API_KEY = "VOTREAPI"; 
       
       const systemInstruction = "Tu es SAIDA, un assistant agricole expert travaillant en Côte d'Ivoire. Tu aides les agriculteurs avec des conseils simples, pratiques et directs sur la météo, les cultures (maïs, coton, anacarde), et les maladies. Sois chaleureux et concis.";
 
