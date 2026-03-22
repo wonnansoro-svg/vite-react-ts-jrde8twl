@@ -421,7 +421,6 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
   );
 };
 
-// --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
 // --- 7. ÉCRAN CHAT (SAIDA IA) ---
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = React.useState<{role: 'user' | 'ai', text: string}[]>([
@@ -429,11 +428,44 @@ const ChatScreen: React.FC = () => {
   ]);
   const [inputMessage, setInputMessage] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  
+  // NOUVEAU : Mémoire pour savoir quel message l'IA est en train de lire
+  const [speakingIndex, setSpeakingIndex] = React.useState<number | null>(null);
+
+  // NOUVEAU : Fonction pour lire le texte à voix haute
+  const lireMessage = (text: string, index: number) => {
+    if (!('speechSynthesis' in window)) {
+      alert("La synthèse vocale n'est pas supportée sur ce navigateur.");
+      return;
+    }
+
+    // Si on clique sur le bouton du message qui est DÉJÀ en train d'être lu, on arrête le son
+    if (speakingIndex === index) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+      return;
+    }
+
+    // Sinon, on annule ce qui jouait avant et on lit le nouveau message
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR'; // Voix en français
+    utterance.rate = 0.9; // Un peu plus lent pour être bien clair
+
+    utterance.onstart = () => setSpeakingIndex(index);
+    utterance.onend = () => setSpeakingIndex(null);
+    utterance.onerror = () => setSpeakingIndex(null);
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // 1. Ajouter le message de l'utilisateur à l'écran
+    // Arrêter la voix si l'utilisateur pose une nouvelle question
+    window.speechSynthesis.cancel();
+    setSpeakingIndex(null);
+
     const newMessages = [...messages, { role: 'user', text: inputMessage }];
     setMessages(newMessages as {role: 'user' | 'ai', text: string}[]);
     setInputMessage('');
@@ -441,12 +473,10 @@ const ChatScreen: React.FC = () => {
 
     try {
       // ⚠️ REMPLACEZ CETTE CLÉ PAR VOTRE CLÉ GOOGLE GEMINI
-      const API_KEY = "AIzaSyButD7AEmUZ1HnZLy_KUkX9ghVZgUeQz-g"; 
+      const API_KEY = "VOTRE_CLE_GEMINI_ICI"; 
       
-      // On prépare le comportement de l'IA (le "Prompt système")
       const systemInstruction = "Tu es SAIDA, un assistant agricole expert travaillant en Côte d'Ivoire. Tu aides les agriculteurs avec des conseils simples, pratiques et directs sur la météo, les cultures (maïs, coton, anacarde), et les maladies. Sois chaleureux et concis.";
 
-      // 2. Envoyer la question au cerveau de l'IA (Google Gemini)
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -460,7 +490,6 @@ const ChatScreen: React.FC = () => {
       
       if (data.error) throw new Error(data.error.message);
 
-      // 3. Récupérer la réponse et l'afficher
       const aiResponse = data.candidates[0].content.parts[0].text;
       setMessages([...newMessages, { role: 'ai', text: aiResponse }] as {role: 'user' | 'ai', text: string}[]);
 
@@ -474,7 +503,6 @@ const ChatScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pb-20">
-      {/* En-tête du Chat */}
       <div className="bg-green-600 p-4 text-white shadow-md z-10">
         <h2 className="text-xl font-black flex items-center">
           <MessageCircle className="mr-2" /> SAIDA IA
@@ -482,19 +510,35 @@ const ChatScreen: React.FC = () => {
         <p className="text-green-100 text-xs mt-1">Votre expert agricole personnel</p>
       </div>
 
-      {/* Zone des messages */}
       <div className="flex-grow overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
+            <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm relative group ${
               msg.role === 'user' 
                 ? 'bg-green-500 text-white rounded-tr-sm' 
                 : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
             }`}>
               <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+              
+              {/* NOUVEAU : Le bouton Haut-parleur pour les messages de l'IA */}
+              {msg.role === 'ai' && (
+                <button 
+                  onClick={() => lireMessage(msg.text, index)}
+                  className={`mt-2 p-1.5 rounded-full inline-flex items-center transition-colors ${
+                    speakingIndex === index 
+                      ? 'bg-green-100 text-green-700 animate-pulse' 
+                      : 'bg-gray-50 text-gray-400 hover:text-green-600 hover:bg-green-50'
+                  }`}
+                  title={speakingIndex === index ? "Arrêter la lecture" : "Lire le message"}
+                >
+                  <Volume2 size={16} />
+                  {speakingIndex === index && <span className="text-[10px] font-bold ml-1">Lecture...</span>}
+                </button>
+              )}
             </div>
           </div>
         ))}
+        
         {isLoading && (
           <div className="flex justify-start">
             <div className="bg-white text-gray-500 border border-gray-100 p-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center space-x-2">
@@ -506,7 +550,6 @@ const ChatScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Zone de saisie */}
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="flex items-center bg-gray-100 rounded-full p-1 pl-4 shadow-inner">
           <input 
