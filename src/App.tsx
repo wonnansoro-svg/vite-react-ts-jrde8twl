@@ -1,16 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import React, { useState, useEffect } from 'react';
 import { 
   Home, CloudRain, MessageCircle, Bell, Volume2, 
   AlertTriangle, Send, Sun, Cloud, Bug, Leaf, 
   MapPin, ArrowLeft, Wind, CloudLightning, 
   XCircle, Loader2, Locate, Phone, MessageSquare, Map,
-  CreditCard, Check, Crown, Star, Activity, HelpCircle
+  CreditCard, Check, Crown, Star, Activity, HelpCircle,
+  Droplets, Sprout, Radio, Smartphone
 } from 'lucide-react';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { MapContainer, TileLayer, Polygon, Popup, useMap, FeatureGroup, ImageOverlay } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, useMap, FeatureGroup, ImageOverlay } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -65,7 +65,7 @@ const BottomNav: React.FC<{ activeTab: TabType, setActiveTab: (t: TabType) => vo
 
 const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdateLocation: () => void }> = ({ setIsProfileOpen, onUpdateLocation }) => {
   const [currentPlan, setCurrentPlan] = useState('premium');
-  const supportNumber = "2250778014537"; // Numéro d'assistance à modifier
+  const supportNumber = "2250778014537"; 
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto z-40 relative pb-20">
@@ -74,7 +74,6 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
       </div>
       
       <div className="p-4 space-y-6">
-        {/* EN TÊTE DU PROFIL */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-16 h-16 rounded-full border-2 border-green-500 object-cover" />
           <div>
@@ -84,7 +83,6 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
           </div>
         </div>
 
-        {/* NOUVEAU : BOUTON ASSISTANCE */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="font-bold text-gray-800 mb-2 flex items-center"><HelpCircle className="mr-2 text-green-600" size={20}/> Besoin d'assistance ?</h3>
           <p className="text-sm text-gray-600 mb-4">Un problème avec l'application ou besoin d'un conseil agronomique ?</p>
@@ -98,11 +96,16 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
           </div>
         </div>
 
-        <button onClick={() => { localStorage.removeItem('champ_agriculteur_poly');localStorage.removeItem('champ_agriculteur_ndvi');
-                window.location.reload(); // Rafraîchit l'application
-                           }}> Effacer mon champ</button>
+        <button 
+          onClick={() => { 
+            localStorage.removeItem('champ_agriculteur_poly');
+            localStorage.removeItem('champ_agriculteur_ndvi');
+            window.location.reload(); 
+          }} 
+          className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-200 hover:bg-red-100 transition-colors">
+            Effacer mon champ de la carte
+        </button>
         
-        {/* GESTION GPS */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="font-bold text-gray-800 mb-3 flex items-center"><Map className="mr-2 text-green-600" size={20}/> Gestion de l'exploitation</h3>
           <button onClick={() => { onUpdateLocation(); setIsProfileOpen(false); }} className="w-full bg-blue-50 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 flex items-center justify-center hover:bg-blue-100 transition-colors">
@@ -110,7 +113,6 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
           </button>
         </div>
 
-        {/* RETOUR DE LA SECTION ABONNEMENTS */}
         <div>
           <h3 className="font-bold text-gray-800 mb-4 flex items-center"><CreditCard className="mr-2 text-green-600" size={20}/> Mes Abonnements</h3>
           <div className="space-y-4">
@@ -158,33 +160,163 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
   );
 };
 
-// --- 4. ÉCRAN DES ALERTES DÉTAILLÉES ---
+// --- 4. ÉCRAN DES ALERTES DÉTAILLÉES (AVEC NOUVELLES DONNÉES SATELLITES) ---
 const AlertScreen: React.FC = () => {
-  const contactNumber = "22500000000"; 
+  const [speakingId, setSpeakingId] = React.useState<number | null>(null);
+
+  const lireAlerte = (text: string, id: number) => {
+    if ('speechSynthesis' in window) {
+      if (speakingId === id) {
+        window.speechSynthesis.cancel();
+        setSpeakingId(null);
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fr-FR';
+      utterance.rate = 0.9;
+      utterance.onstart = () => setSpeakingId(id);
+      utterance.onend = () => setSpeakingId(null);
+      utterance.onerror = () => setSpeakingId(null);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const alertsData = [
+    {
+      id: 1,
+      type: "Alerte Phytosanitaire",
+      title: "Chenilles Ravageuses",
+      crop: "Maïs",
+      satellite: "Sentinel-2 (Indice REIP)",
+      description: "Chute brutale du Red Edge détectée. La surface photosynthétique est réduite (anomalie foliaire).",
+      action: "Vérifiez la présence de chenilles légionnaires sur vos feuilles. Traitement ciblé recommandé.",
+      urgency: "Critique",
+      icon: <Bug size={24} className="text-red-600" />,
+      color: "bg-red-50",
+      borderColor: "border-red-500",
+      textColor: "text-red-800",
+      badge: "bg-red-600"
+    },
+    {
+      id: 2,
+      type: "Alerte Irrigation",
+      title: "Stress Hydrique",
+      crop: "Coton",
+      satellite: "Landsat 8 / Sentinel-2 (Indice NDMI)",
+      description: "L'indice d'humidité (NDMI) a chuté de plus de 15% en 5 jours. La plante a soif mais ne l'affiche pas encore visuellement.",
+      action: "Irrigation d'urgence requise sur la parcelle pour éviter le flétrissement.",
+      urgency: "Avertissement",
+      icon: <Droplets size={24} className="text-orange-500" />,
+      color: "bg-orange-50",
+      borderColor: "border-orange-400",
+      textColor: "text-orange-800",
+      badge: "bg-orange-500"
+    },
+    {
+      id: 3,
+      type: "Feu Vert Semis",
+      title: "Humidité Optimale",
+      crop: "Anacarde / Coton",
+      satellite: "Sentinel-1 (Radar Backscatter)",
+      description: "La réflectance radar indique que les 5 premiers cm du sol sont saturés à 65% suite aux pluies récentes.",
+      action: "Conditions de sol idéales. Vous pouvez démarrer le semis pour éviter la sécheresse ou le lessivage.",
+      urgency: "Action Idéale",
+      icon: <Sprout size={24} className="text-green-600" />,
+      color: "bg-green-50",
+      borderColor: "border-green-500",
+      textColor: "text-green-800",
+      badge: "bg-green-600"
+    },
+    {
+      id: 4,
+      type: "Fenêtre Météo",
+      title: "Moment de Pulvérisation",
+      crop: "Toutes cultures",
+      satellite: "Agrométéo Locale",
+      description: "Vent faible prévu (<15km/h) et hygrométrie élevée demain matin.",
+      action: "Conditions optimales pour traiter vos champs demain entre 6h et 9h du matin.",
+      urgency: "Information",
+      icon: <Wind size={24} className="text-blue-500" />,
+      color: "bg-blue-50",
+      borderColor: "border-blue-400",
+      textColor: "text-blue-800",
+      badge: "bg-blue-500"
+    }
+  ];
+
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto pb-24">
-      <div className="bg-red-600 text-white p-4 pt-6 flex items-center font-bold text-lg sticky top-0 shadow-md">
-        <AlertTriangle className="mr-2" size={24} /> Centre d'Alertes
+    <div className="flex flex-col h-full bg-gray-100 pb-20 overflow-y-auto">
+      <div className="bg-red-600 p-6 rounded-b-3xl shadow-md text-white z-10">
+        <h2 className="text-2xl font-black flex items-center">
+          <AlertTriangle className="mr-2" size={28} />
+          Centre d'Alertes
+        </h2>
+        <p className="text-red-100 text-sm mt-2 opacity-90">
+          Analyses croisées Sentinel-1, Sentinel-2 et Météo
+        </p>
       </div>
-      <div className="p-4 space-y-4">
-        <div className="bg-white rounded-2xl shadow-md border-t-4 border-red-600 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="font-black text-red-600 text-lg">Invasion de Chenilles Légionnaires</h2>
-              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase">Critique</span>
+
+      <div className="p-4 space-y-4 mt-2">
+        {alertsData.map((alert) => (
+          <div key={alert.id} className={`${alert.color} border-l-4 ${alert.borderColor} rounded-xl shadow-sm overflow-hidden relative`}>
+            <div className={`absolute top-0 right-0 ${alert.badge} text-white text-[10px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-wider`}>
+              {alert.urgency}
             </div>
-            <p className="text-sm text-gray-600 font-medium">Détecté sur : Parcelle 1 (Maïs)</p>
-          </div>
-          <img src="https://bioprotectionportal.com/wp-content/uploads/2023/07/fall_armyworm_larvae_on_maize-1-1024x683.jpg" alt="Chenilles" className="w-full h-48 object-cover" />
-          <div className="p-4 bg-red-50">
-            <p className="text-sm text-gray-800 mb-4">L'analyse satellite indique une perte rapide de la masse végétale. Action urgente : Appliquez un bio-pesticide approprié tôt le matin ou tard le soir.</p>
-            <h3 className="font-bold text-gray-800 mb-3 text-sm">Contacter un ingénieur terrain :</h3>
-            <div className="flex space-x-2">
-              <a href={`tel:+${contactNumber}`} className="flex-1 bg-gray-800 hover:bg-black text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm"><Phone size={16} className="mr-1.5" /> Appel</a>
-              <a href={`sms:+${contactNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm"><MessageSquare size={16} className="mr-1.5" /> SMS</a>
-              <a href={`https://wa.me/${contactNumber}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl font-bold flex justify-center items-center text-xs transition-colors shadow-sm"><MessageCircle size={16} className="mr-1.5" /> WhatsApp</a>
+            
+            <div className="p-4 pt-5">
+              <div className="flex items-start mb-2">
+                <div className="bg-white p-2 rounded-lg shadow-sm mr-3 shrink-0">
+                  {alert.icon}
+                </div>
+                <div className="flex-grow pr-6">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{alert.type} • {alert.crop}</p>
+                  <h3 className={`font-black text-lg ${alert.textColor} leading-tight`}>{alert.title}</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-1 flex items-center">
+                    📡 Source : {alert.satellite}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white/60 p-3 rounded-lg mt-3 mb-3">
+                <p className="text-sm text-gray-700 font-medium">{alert.description}</p>
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+                <p className={`text-sm font-bold ${alert.textColor} flex-grow pr-2 leading-tight`}>
+                  👉 Action : {alert.action}
+                </p>
+                <button 
+                  onClick={() => lireAlerte(`${alert.title}. ${alert.description}. Action recommandée : ${alert.action}`, alert.id)}
+                  className={`p-3 rounded-full shadow-sm shrink-0 transition-colors ${
+                    speakingId === alert.id ? 'bg-green-500 text-white animate-pulse' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Volume2 size={20} />
+                </button>
+              </div>
             </div>
           </div>
+        ))}
+      </div>
+
+      {/* Section : Le défi du dernier kilomètre */}
+      <div className="px-4 mt-4 mb-8">
+        <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-3 px-2">Action : Dernier Kilomètre</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center hover:bg-green-50 transition-colors group">
+            <div className="bg-green-100 p-3 rounded-full mb-2 group-hover:scale-110 transition-transform">
+              <Smartphone size={24} className="text-green-600" />
+            </div>
+            <span className="text-xs font-bold text-gray-700 text-center">Diffuser par<br/>SMS Groupé</span>
+          </button>
+          
+          <button className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors group">
+            <div className="bg-blue-100 p-3 rounded-full mb-2 group-hover:scale-110 transition-transform">
+              <Radio size={24} className="text-blue-600" />
+            </div>
+            <span className="text-xs font-bold text-gray-700 text-center">Alerter via<br/>Radio Locale</span>
+          </button>
         </div>
       </div>
     </div>
@@ -200,10 +332,8 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
   const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
   const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
 
-  // NOUVEAU : Mémoire pour le dessin du champ
   const [savedPolygon, setSavedPolygon] = React.useState<[number, number][] | null>(null);
 
-  // NOUVEAU : Au chargement de l'écran, on regarde si on a gardé le champ en mémoire
   React.useEffect(() => {
     const memoryPoly = localStorage.getItem('champ_agriculteur_poly');
     const memoryNdvi = localStorage.getItem('champ_agriculteur_ndvi');
@@ -211,10 +341,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
     if (memoryPoly) setSavedPolygon(JSON.parse(memoryPoly));
     if (memoryNdvi) setNdviOverlay(JSON.parse(memoryNdvi));
   }, []);
-
-  const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
-  const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
-  const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
 
   const cropData: any = {
     'Maïs': { ndvi: '0.42', status: 'Critique', color: 'text-red-600', bg: 'bg-red-100', text: "Attention ! L'indice de santé de votre maïs a fortement baissé. Le satellite détecte des dommages qui correspondent aux chenilles légionnaires. Traitement urgent conseillé." },
@@ -249,7 +375,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           
           <FeatureGroup>
-            {/* NOUVEAU : position="bottomleft" pour ne plus superposer avec le profil */}
             <EditControl
               position="bottomleft"
               onCreated={async (e: any) => {
@@ -265,14 +390,12 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 const geoJsonCoords = latlngs.map((coord: any) => [coord.lng, coord.lat]);
                 geoJsonCoords.push(geoJsonCoords[0]); 
                 
-                // Préparation du dessin pour la sauvegarde visuelle
                 const displayPoly = latlngs.map((coord: any) => [coord.lat, coord.lng]);
 
                 setIsLoadingNdvi(true);
                 alert("📡 Demande envoyée au satellite... Calcul en cours !");
 
                 try {
-                  // ⚠️ REMETTRE VOTRE CLÉ AGROMONITORING ICI
                   const API_KEY = "5efa02f1edfc4a79ab94a5810d1eb0bf"; 
 
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
@@ -297,7 +420,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                     const latestImage = imgData[imgData.length - 1];
                     const ndviUrl = latestImage.image.ndvi;
                     
-                    // NOUVEAU : On sauvegarde dans la mémoire du téléphone/navigateur
                     const ndviData = { url: ndviUrl, bounds: leafletBounds };
                     setNdviOverlay(ndviData);
                     setSavedPolygon(displayPoly);
@@ -323,7 +445,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
             />
           </FeatureGroup>
 
-          {/* NOUVEAU : Si un champ est en mémoire, on redessine ses contours */}
           {savedPolygon && (
             <Polygon positions={savedPolygon} pathOptions={{ color: '#22c55e', fillOpacity: 0.1, weight: 2 }} />
           )}
@@ -346,7 +467,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
             </div>
           </div>
           <button onClick={() => setActiveTab('alert')} className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-sm">
-            Voir l'alerte et contacter un expert
+            Voir les alertes détaillées
           </button>
         </div>
       </div>
@@ -399,8 +520,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
   );
 };
 
-
-
 // --- 6. ÉCRAN MÉTÉO ---
 const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
   const [speakingId, setSpeakingId] = useState<number | null>(null);
@@ -448,29 +567,24 @@ const ChatScreen: React.FC = () => {
   ]);
   const [inputMessage, setInputMessage] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
-  
-  // NOUVEAU : Mémoire pour savoir quel message l'IA est en train de lire
   const [speakingIndex, setSpeakingIndex] = React.useState<number | null>(null);
 
-  // NOUVEAU : Fonction pour lire le texte à voix haute
   const lireMessage = (text: string, index: number) => {
     if (!('speechSynthesis' in window)) {
       alert("La synthèse vocale n'est pas supportée sur ce navigateur.");
       return;
     }
 
-    // Si on clique sur le bouton du message qui est DÉJÀ en train d'être lu, on arrête le son
     if (speakingIndex === index) {
       window.speechSynthesis.cancel();
       setSpeakingIndex(null);
       return;
     }
 
-    // Sinon, on annule ce qui jouait avant et on lit le nouveau message
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'fr-FR'; // Voix en français
-    utterance.rate = 0.9; // Un peu plus lent pour être bien clair
+    utterance.lang = 'fr-FR'; 
+    utterance.rate = 0.9; 
 
     utterance.onstart = () => setSpeakingIndex(index);
     utterance.onend = () => setSpeakingIndex(null);
@@ -482,7 +596,6 @@ const ChatScreen: React.FC = () => {
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // Arrêter la voix si l'utilisateur pose une nouvelle question
     window.speechSynthesis.cancel();
     setSpeakingIndex(null);
 
@@ -492,7 +605,7 @@ const ChatScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // ⚠️ REMPLACEZ CETTE CLÉ PAR VOTRE CLÉ GOOGLE GEMINI
+      // ⚠️ ASSUREZ-VOUS DE METTRE VOTRE CLÉ GEMINI ICI POUR QUE LE CHAT FONCTIONNE
       const API_KEY = "VOTREAPI"; 
       
       const systemInstruction = "Tu es SAIDA, un assistant agricole expert travaillant en Côte d'Ivoire. Tu aides les agriculteurs avec des conseils simples, pratiques et directs sur la météo, les cultures (maïs, coton, anacarde), et les maladies. Sois chaleureux et concis.";
@@ -540,7 +653,6 @@ const ChatScreen: React.FC = () => {
             }`}>
               <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
               
-              {/* NOUVEAU : Le bouton Haut-parleur pour les messages de l'IA */}
               {msg.role === 'ai' && (
                 <button 
                   onClick={() => lireMessage(msg.text, index)}
@@ -696,14 +808,12 @@ export default function App() {
     <div className="h-[100dvh] w-full bg-white flex flex-col relative overflow-hidden">
       <div className="flex-grow relative overflow-hidden bg-white">
         
-        {/* 1. L'écran de Profil (S'affiche au-dessus de tout si ouvert) */}
         {isProfileOpen && (
           <div className="absolute inset-0 z-50 bg-white">
             <AccountScreen setIsProfileOpen={setIsProfileOpen} onUpdateLocation={defineFarmLocation} />
           </div>
         )}
 
-        {/* 2. Les 4 onglets principaux empilés (Ils ne sont plus détruits, juste cachés !) */}
         <div className={`absolute inset-0 transition-opacity duration-200 bg-white ${activeTab === 'dashboard' ? 'z-10 opacity-100' : 'z-0 opacity-0 pointer-events-none'}`}>
           <DashboardScreen location={farmLocation} setIsProfileOpen={setIsProfileOpen} setActiveTab={setActiveTab} />
         </div>
@@ -722,9 +832,7 @@ export default function App() {
 
       </div>
       
-      {/* 3. La barre de navigation du bas */}
       {!isProfileOpen && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsProfileOpen={setIsProfileOpen} />}
     </div>
   );
 }
- 
