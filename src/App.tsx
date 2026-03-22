@@ -105,7 +105,7 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
         </div>
 
         <button onClick={effacerChamp} className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-200 hover:bg-red-100 transition-colors">
-          Effacer mon champ du Cloud
+          Effacer mon champ sur la carte
         </button>
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -209,7 +209,7 @@ const AlertScreen: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-100 pb-20 overflow-y-auto">
       <div className="bg-red-600 p-6 rounded-b-3xl shadow-md text-white z-10">
         <h2 className="text-2xl font-black flex items-center"><AlertTriangle className="mr-2" size={28} /> Centre d'Alertes</h2>
-        <p className="text-red-100 text-sm mt-2 opacity-90">Connecté au Cloud (Firebase)</p>
+        <p className="text-red-100 text-sm mt-2 opacity-90">Les informations de vos parcelles </p>
       </div>
       <div className="p-4 space-y-4 mt-2">
         {!realData && <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 text-sm font-medium text-center">Veuillez dessiner un champ sur la carte (Accueil) pour que les satellites analysent votre parcelle.</div>}
@@ -268,10 +268,10 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
 
   const products = [
     { id: 1, title: "Engrais NPK 15-15-15", oldPrice: 15000, price: 12500, img: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500", desc: "Sac de 50kg - Idéal pour le Maïs" },
-    { id: 2, title: "Semences Maïs Hybride", oldPrice: 6000, price: 4500, img: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=500", desc: "Sachet de 2kg - Haut rendement" },
+    { id: 2, title: "Semences Maïs Hybride", oldPrice: 6000, price: 4500, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThCL5dxbxuL-teiLLdghwi_Cf_SLAeVhyE3w&s", desc: "Sachet de 2kg - Haut rendement" },
     { id: 3, title: "Insecticide K-Othrine", oldPrice: 4000, price: 3500, img: "https://img.freepik.com/photos-gratuite/bouteille-pulverisateur-plastique-blanc-isole-fond-blanc_1232-3023.jpg", desc: "Anti-chenilles foudroyant (1L)" },
     { id: 4, title: "Pulvérisateur à Dos 16L", oldPrice: 22000, price: 18000, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", desc: "Manuel, robuste et pratique" },
-    { id: 5, title: "Bottes de Travail Pro", oldPrice: 7500, price: 5000, img: "https://images.unsplash.com/photo-1605810756781-b9978434a946?w=500", desc: "Protection contre les serpents (Taille 42)" }
+    { id: 5, title: "Bottes de Travail Pro", oldPrice: 7500, price: 5000, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSa8EXx75lBe30nUCNdkiprU-YKBZR6MjDyeA&s", desc: "Protection contre les serpents (Taille 42)" }
   ];
 
   const addToCart = (product: any) => {
@@ -387,7 +387,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         
         <div className="px-4 mt-5">
           <button onClick={() => setActiveTab('alert')} className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-3 rounded-lg shadow-sm">
-            Voir les alertes Cloud
+            Voir les alertes de son champs
           </button>
         </div>
 
@@ -540,23 +540,105 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
 };
 
 // --- 9. ÉCRAN MÉTÉO ---
-const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
+const WeatherScreen: React.FC<{ location: any, forecast: any[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
+  // Nouvel état pour savoir quel jour est en train d'être lu
+  const [speakingId, setSpeakingId] = React.useState<string | number | null>(null);
+
+  // Fonction de lecture vocale
+  const lireMeteo = (texte: string, id: string | number) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Coupe le son s'il parlait déjà
+      
+      // Si on clique sur le bouton qui parle déjà, ça l'arrête juste
+      if (speakingId === id) {
+        setSpeakingId(null);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(texte);
+      utterance.lang = 'fr-FR'; 
+      utterance.rate = 0.85; 
+      utterance.onstart = () => setSpeakingId(id); 
+      utterance.onend = () => setSpeakingId(null); 
+      utterance.onerror = () => setSpeakingId(null);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Coupe le son si l'utilisateur quitte la page météo
+  React.useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   if (isLoading) return <div className="flex h-full items-center justify-center flex-col"><Loader2 className="animate-spin text-green-600 mb-4" size={48} /><p>Analyse météo de {location.city}...</p></div>;
 
   return (
     <div className="flex flex-col h-full bg-gray-100 overflow-y-auto pb-24">
-      <div className="bg-white p-4 shadow-sm border-b flex items-center justify-between sticky top-0 z-20"><h1 className="text-xl font-black">Météo & Actions</h1><div className="flex items-center bg-green-50 px-3 py-1.5 rounded-full"><MapPin size={16} className="mr-1.5 text-green-600" /><span className="text-sm font-bold text-green-800">{location.city}</span></div></div>
+      
+      {/* HEADER FIXE */}
+      <div className="bg-white p-4 shadow-sm border-b flex items-center justify-between sticky top-0 z-20">
+        <h1 className="text-xl font-black">Météo & Actions</h1>
+        <div className="flex items-center bg-green-50 px-3 py-1.5 rounded-full">
+          <MapPin size={16} className="mr-1.5 text-green-600" />
+          <span className="text-sm font-bold text-green-800">{location.city}</span>
+        </div>
+      </div>
+      
+      {/* LISTE DES JOURS */}
       <div className="p-4 space-y-4">
         {forecast.map((day) => (
           <div key={day.id} className="bg-white rounded-2xl overflow-hidden shadow-md flex flex-col relative">
-            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm uppercase flex justify-center items-center">{day.day} {day.rain && day.rain !== "0mm" && <span className="ml-2 text-blue-300 text-xs lowercase">({day.rain})</span>}</div>
+            
+            <div className="bg-gray-800 text-white text-center py-1.5 font-bold text-sm uppercase flex justify-center items-center">
+              {day.day} {day.rain && day.rain !== "0mm" && <span className="ml-2 text-blue-300 text-xs lowercase">({day.rain})</span>}
+            </div>
+            
             <div className="flex h-36">
-              <div className="w-1/2 relative border-r-2 border-white"><img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div><div className="absolute top-2 left-2 flex items-center"><day.Icon className="text-white mr-1.5" size={20} /><span className="text-2xl font-black text-white leading-none">{day.temp}</span></div><div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded flex items-center"><Wind className="text-blue-300 mr-1.5" size={14} /><span className="text-xs font-bold text-white">{day.wind}</span></div></div>
-              <div className="w-1/2 relative border-l-2 border-white"><img src={day.actionImg} alt="Action" className="w-full h-full object-cover" /><div className="absolute inset-0 flex items-center justify-center bg-black/20">{day.actionType === 'spray_no' && <div className="bg-white rounded-full p-1"><XCircle size={64} className="text-red-600 drop-shadow-xl" /></div>}{day.actionType === 'sowing' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-green-800 border-2 border-green-500 shadow-xl -rotate-12 uppercase">Semer</div>}{day.actionType === 'harvest' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-orange-800 border-2 border-orange-500 shadow-xl -rotate-12 uppercase">Récolter</div>}</div></div>
+              {/* IMAGE MÉTÉO */}
+              <div className="w-1/2 relative border-r-2 border-white">
+                <img src={day.weatherImg} alt="Météo" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                <div className="absolute top-2 left-2 flex items-center">
+                  <day.Icon className="text-white mr-1.5" size={20} />
+                  <span className="text-2xl font-black text-white leading-none">{day.temp}</span>
+                </div>
+                <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded flex items-center">
+                  <Wind className="text-blue-300 mr-1.5" size={14} />
+                  <span className="text-xs font-bold text-white">{day.wind}</span>
+                </div>
+              </div>
+              
+              {/* IMAGE ACTION */}
+              <div className="w-1/2 relative border-l-2 border-white">
+                <img src={day.actionImg} alt="Action" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  {day.actionType === 'spray_no' && <div className="bg-white rounded-full p-1"><XCircle size={64} className="text-red-600 drop-shadow-xl" /></div>}
+                  {day.actionType === 'sowing' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-green-800 border-2 border-green-500 shadow-xl -rotate-12 uppercase">Semer</div>}
+                  {day.actionType === 'harvest' && <div className="bg-white/90 px-3 py-1.5 rounded-xl font-black text-orange-800 border-2 border-orange-500 shadow-xl -rotate-12 uppercase">Récolter</div>}
+                </div>
+              </div>
             </div>
-            <div className="p-3 bg-white text-xs text-gray-700 border-t border-gray-100">
-              <strong className="text-green-700">Conseil :</strong> {day.ttsText?.split("Suggestion :")[1] || day.ttsText}
+            
+            {/* CONSEIL ET BOUTON AUDIO */}
+            <div className="p-3 bg-white text-xs text-gray-700 border-t border-gray-100 flex items-center justify-between">
+              <div className="pr-2">
+                <strong className="text-green-700">Conseil :</strong> {day.ttsText?.split("Suggestion :")[1] || day.ttsText}
+              </div>
+              
+              {/* BOUTON AUDIO */}
+              <button 
+                onClick={() => lireMeteo(day.ttsText, day.id)}
+                className={`p-2 rounded-full shadow-sm transition-all flex-shrink-0 ${speakingId === day.id ? 'bg-green-500 text-white animate-pulse' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                aria-label="Écouter le conseil météo"
+              >
+                <Volume2 size={20} />
+              </button>
             </div>
+            
           </div>
         ))}
       </div>
