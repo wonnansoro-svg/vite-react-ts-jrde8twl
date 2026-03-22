@@ -1,22 +1,3 @@
-Je vous présente mes plus sincères excuses. Dans ma volonté de me concentrer sur Firebase, j'ai fait l'erreur de "raccourcir" les autres parties du code pour gagner de la place, ce qui a cassé votre profil, votre chat et votre tableau de bord. C'était une très mauvaise idée de ma part !
-
-J'ai également vu dans le fichier que vous aviez partagé qu'il y avait un gros problème d'importation (les éléments de la carte s'étaient mélangés avec les icônes).
-
-Voici la VERSION INTÉGRALE ET DÉFINITIVE. J'ai tout remis en place avec un soin absolu :
-
-Le Profil complet (avec les 3 abonnements et la mise à jour GPS).
-
-Le Tableau de bord complet (avec les 3 images Maïs/Coton/Anacarde, les popups NDVI et les alertes intelligentes).
-
-Le Chat IA complet (avec Gemini et la synthèse vocale).
-
-Les Alertes et la Météo complètes.
-
-Firebase (pour sauvegarder le champ sur le cloud).
-
-Veuillez effacer tout le contenu de votre fichier App.tsx (absolument tout, de la ligne 1 à la dernière), et collez ce code en entier :
-
-TypeScript
 import React, { useState, useEffect } from 'react';
 
 // --- 1. IMPORTS DES ICÔNES (Lucide) ---
