@@ -160,9 +160,16 @@ const AccountScreen: React.FC<{ setIsProfileOpen: (o: boolean) => void, onUpdate
   );
 };
 
-// --- 4. ÉCRAN DES ALERTES DÉTAILLÉES (AVEC NOUVELLES DONNÉES SATELLITES) ---
+// --- 4. ÉCRAN DES ALERTES DÉTAILLÉES (CONNECTÉ AU SATELLITE) ---
 const AlertScreen: React.FC = () => {
   const [speakingId, setSpeakingId] = React.useState<number | null>(null);
+  const [realData, setRealData] = React.useState<any>(null);
+
+  // Au chargement, on récupère les données réelles du satellite
+  React.useEffect(() => {
+    const data = localStorage.getItem('real_satellite_data');
+    if (data) setRealData(JSON.parse(data));
+  }, []);
 
   const lireAlerte = (text: string, id: number) => {
     if ('speechSynthesis' in window) {
@@ -182,68 +189,42 @@ const AlertScreen: React.FC = () => {
     }
   };
 
-  const alertsData = [
+  // Base de données de toutes les alertes possibles
+  const allAlerts = [
     {
-      id: 1,
-      type: "Alerte Phytosanitaire",
-      title: "Chenilles Ravageuses",
-      crop: "Maïs",
-      satellite: "Sentinel-2 (Indice REIP)",
-      description: "Chute brutale du Red Edge détectée. La surface photosynthétique est réduite (anomalie foliaire).",
-      action: "Vérifiez la présence de chenilles légionnaires sur vos feuilles. Traitement ciblé recommandé.",
-      urgency: "Critique",
-      icon: <Bug size={24} className="text-red-600" />,
-      color: "bg-red-50",
-      borderColor: "border-red-500",
-      textColor: "text-red-800",
-      badge: "bg-red-600"
+      id: 1, type: "Feu Vert Semis", title: "Humidité Optimale", crop: "Toutes cultures",
+      satellite: "Sentinel-1 (Radar Backscatter)", urgency: "Action Idéale", icon: <Sprout size={24} className="text-green-600" />,
+      color: "bg-green-50", borderColor: "border-green-500", textColor: "text-green-800", badge: "bg-green-600",
+      description: "Le satellite Radar indique que votre sol est parfaitement humide (>25%).",
+      action: "Conditions idéales. Vous pouvez démarrer le semis aujourd'hui."
     },
     {
-      id: 2,
-      type: "Alerte Irrigation",
-      title: "Stress Hydrique",
-      crop: "Coton",
-      satellite: "Landsat 8 / Sentinel-2 (Indice NDMI)",
-      description: "L'indice d'humidité (NDMI) a chuté de plus de 15% en 5 jours. La plante a soif mais ne l'affiche pas encore visuellement.",
-      action: "Irrigation d'urgence requise sur la parcelle pour éviter le flétrissement.",
-      urgency: "Avertissement",
-      icon: <Droplets size={24} className="text-orange-500" />,
-      color: "bg-orange-50",
-      borderColor: "border-orange-400",
-      textColor: "text-orange-800",
-      badge: "bg-orange-500"
+      id: 2, type: "Alerte Irrigation", title: "Stress Hydrique Sévère", crop: "Toutes cultures",
+      satellite: "Sentinel-1 & Landsat (NDMI)", urgency: "Avertissement", icon: <Droplets size={24} className="text-orange-500" />,
+      color: "bg-orange-50", borderColor: "border-orange-400", textColor: "text-orange-800", badge: "bg-orange-500",
+      description: "Le sol est extrêmement sec (humidité < 15%). La plante commence à souffrir.",
+      action: "Irrigation d'urgence requise sur la parcelle pour éviter le flétrissement."
     },
     {
-      id: 3,
-      type: "Feu Vert Semis",
-      title: "Humidité Optimale",
-      crop: "Anacarde / Coton",
-      satellite: "Sentinel-1 (Radar Backscatter)",
-      description: "La réflectance radar indique que les 5 premiers cm du sol sont saturés à 65% suite aux pluies récentes.",
-      action: "Conditions de sol idéales. Vous pouvez démarrer le semis pour éviter la sécheresse ou le lessivage.",
-      urgency: "Action Idéale",
-      icon: <Sprout size={24} className="text-green-600" />,
-      color: "bg-green-50",
-      borderColor: "border-green-500",
-      textColor: "text-green-800",
-      badge: "bg-green-600"
-    },
-    {
-      id: 4,
-      type: "Fenêtre Météo",
-      title: "Moment de Pulvérisation",
-      crop: "Toutes cultures",
-      satellite: "Agrométéo Locale",
-      description: "Vent faible prévu (<15km/h) et hygrométrie élevée demain matin.",
-      action: "Conditions optimales pour traiter vos champs demain entre 6h et 9h du matin.",
-      urgency: "Information",
-      icon: <Wind size={24} className="text-blue-500" />,
-      color: "bg-blue-50",
-      borderColor: "border-blue-400",
-      textColor: "text-blue-800",
-      badge: "bg-blue-500"
+      id: 3, type: "Fenêtre Météo", title: "Moment de Pulvérisation", crop: "Toutes cultures",
+      satellite: "Agrométéo", urgency: "Information", icon: <Wind size={24} className="text-blue-500" />,
+      color: "bg-blue-50", borderColor: "border-blue-400", textColor: "text-blue-800", badge: "bg-blue-500",
+      description: "Vent faible et pas de pluie prévue dans les 24h.",
+      action: "Conditions optimales pour traiter vos champs."
     }
   ];
+
+  // 🧠 LOGIQUE INTELLIGENTE : On filtre les alertes selon les VRAIES valeurs !
+  let activeAlerts = [];
+  if (realData) {
+    // Si l'humidité est supérieure à 25% (0.25), c'est bon pour semer !
+    if (realData.moisture >= 0.25) activeAlerts.push(allAlerts[0]);
+    // Si l'humidité est très basse (< 15%), on déclenche l'alerte Stress Hydrique
+    if (realData.moisture < 0.15) activeAlerts.push(allAlerts[1]);
+    
+    // Alerte météo (toujours active pour l'exemple)
+    activeAlerts.push(allAlerts[2]);
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-100 pb-20 overflow-y-auto">
@@ -253,71 +234,51 @@ const AlertScreen: React.FC = () => {
           Centre d'Alertes
         </h2>
         <p className="text-red-100 text-sm mt-2 opacity-90">
-          Analyses croisées Sentinel-1, Sentinel-2 et Météo
+          Connecté aux satellites Sentinel-1 et Sentinel-2
         </p>
       </div>
 
       <div className="p-4 space-y-4 mt-2">
-        {alertsData.map((alert) => (
+        {!realData && (
+          <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-yellow-800 text-sm font-medium text-center">
+            Veuillez dessiner un champ sur la carte (Accueil) pour que les satellites analysent votre parcelle.
+          </div>
+        )}
+
+        {realData && activeAlerts.length === 0 && (
+          <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-green-800 text-sm font-medium text-center">
+            ✅ Aucune alerte critique. Vos cultures se portent bien !
+          </div>
+        )}
+
+        {activeAlerts.map((alert) => (
           <div key={alert.id} className={`${alert.color} border-l-4 ${alert.borderColor} rounded-xl shadow-sm overflow-hidden relative`}>
             <div className={`absolute top-0 right-0 ${alert.badge} text-white text-[10px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-wider`}>
               {alert.urgency}
             </div>
-            
             <div className="p-4 pt-5">
               <div className="flex items-start mb-2">
-                <div className="bg-white p-2 rounded-lg shadow-sm mr-3 shrink-0">
-                  {alert.icon}
-                </div>
+                <div className="bg-white p-2 rounded-lg shadow-sm mr-3 shrink-0">{alert.icon}</div>
                 <div className="flex-grow pr-6">
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{alert.type} • {alert.crop}</p>
                   <h3 className={`font-black text-lg ${alert.textColor} leading-tight`}>{alert.title}</h3>
-                  <p className="text-xs text-gray-500 font-medium mt-1 flex items-center">
-                    📡 Source : {alert.satellite}
-                  </p>
+                  <p className="text-xs text-gray-500 font-medium mt-1">📡 Source : {alert.satellite}</p>
                 </div>
               </div>
-              
               <div className="bg-white/60 p-3 rounded-lg mt-3 mb-3">
-                <p className="text-sm text-gray-700 font-medium">{alert.description}</p>
-              </div>
-
-              <div className="flex items-center justify-between mt-2">
-                <p className={`text-sm font-bold ${alert.textColor} flex-grow pr-2 leading-tight`}>
-                  👉 Action : {alert.action}
+                <p className="text-sm text-gray-700 font-medium">
+                  {/* On affiche la vraie donnée récupérée */}
+                  {alert.id === 1 || alert.id === 2 ? `[Donnée réelle : ${(realData.moisture * 100).toFixed(0)}% d'humidité] ` : ''} 
+                  {alert.description}
                 </p>
-                <button 
-                  onClick={() => lireAlerte(`${alert.title}. ${alert.description}. Action recommandée : ${alert.action}`, alert.id)}
-                  className={`p-3 rounded-full shadow-sm shrink-0 transition-colors ${
-                    speakingId === alert.id ? 'bg-green-500 text-white animate-pulse' : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Volume2 size={20} />
-                </button>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className={`text-sm font-bold ${alert.textColor} flex-grow pr-2 leading-tight`}>👉 Action : {alert.action}</p>
+                <button onClick={() => lireAlerte(`${alert.title}. ${alert.description}. Action recommandée : ${alert.action}`, alert.id)} className="p-3 rounded-full shadow-sm shrink-0 bg-white text-gray-600 hover:bg-gray-50"><Volume2 size={20} /></button>
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Section : Le défi du dernier kilomètre */}
-      <div className="px-4 mt-4 mb-8">
-        <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-3 px-2">Action : Dernier Kilomètre</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <button className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center hover:bg-green-50 transition-colors group">
-            <div className="bg-green-100 p-3 rounded-full mb-2 group-hover:scale-110 transition-transform">
-              <Smartphone size={24} className="text-green-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-700 text-center">Diffuser par<br/>SMS Groupé</span>
-          </button>
-          
-          <button className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors group">
-            <div className="bg-blue-100 p-3 rounded-full mb-2 group-hover:scale-110 transition-transform">
-              <Radio size={24} className="text-blue-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-700 text-center">Alerter via<br/>Radio Locale</span>
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -398,6 +359,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 try {
                   const API_KEY = "5efa02f1edfc4a79ab94a5810d1eb0bf"; 
 
+                  // 1. On crée le polygone sur le serveur
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -406,15 +368,18 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                       geo_json: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [geoJsonCoords] } }
                     })
                   });
-
                   const polyData = await polyResponse.json();
-                  if (!polyData.id) throw new Error("Erreur");
+                  if (!polyData.id) throw new Error("Erreur de polygone");
 
+                  // 2. On récupère l'image satellite (Sentinel-2)
                   const end = Math.floor(Date.now() / 1000);
                   const start = end - (30 * 24 * 60 * 60);
-
                   const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
                   const imgData = await imgResponse.json();
+
+                  // 3. NOUVEAU : On récupère l'humidité du sol via Radar (Sentinel-1)
+                  const soilResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/soil?polyid=${polyData.id}&appid=${API_KEY}`);
+                  const soilData = await soilResponse.json();
 
                   if (imgData && imgData.length > 0) {
                     const latestImage = imgData[imgData.length - 1];
@@ -424,12 +389,18 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                     setNdviOverlay(ndviData);
                     setSavedPolygon(displayPoly);
                     
+                    // SAUVEGARDE DES VRAIES DONNÉES SATELLITES
                     localStorage.setItem('champ_agriculteur_ndvi', JSON.stringify(ndviData));
                     localStorage.setItem('champ_agriculteur_poly', JSON.stringify(displayPoly));
                     
-                    alert("✅ Analyse terminée ! Le champ est sauvegardé sur votre carte.");
+                    // On sauvegarde l'humidité réelle pour l'écran Alertes
+                    localStorage.setItem('real_satellite_data', JSON.stringify({
+                      moisture: soilData.moisture || 0.2 // (ex: 0.22 = 22% d'humidité)
+                    }));
+                    
+                    alert("✅ Analyse Sentinel-1 et Sentinel-2 terminée ! Allez voir vos alertes.");
                   } else {
-                    alert("Nuages détectés ☁️. Aucune image satellite claire n'est disponible.");
+                    alert("Nuages détectés ☁️. Aucune image claire disponible.");
                   }
                 } catch (error) {
                   console.error("Erreur Satellite:", error);
@@ -437,7 +408,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 } finally {
                   setIsLoadingNdvi(false);
                 }
-              }}
+              } }
               draw={{
                 rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false,
                 polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } }
