@@ -13,6 +13,26 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import { MapContainer, TileLayer, Polygon, useMap, FeatureGroup, ImageOverlay } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 
+
+// --- IMPORTS FIREBASE ---
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+
+// --- CONFIGURATION FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBRiY9PGhZjmZSC9f6Yx0viR3-Qfi2uKEk",
+  authDomain: "saida-979d4.firebaseapp.com",
+  projectId: "saida-979d4",
+  storageBucket: "saida-979d4.firebasestorage.app",
+  messagingSenderId: "66298402035",
+  appId: "1:66298402035:web:f32de787c40e724d95d386"
+};
+
+// Initialisation de Firebase et de la Base de données
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
 // --- 1. DÉFINITION DES TYPES ---
 type TabType = 'dashboard' | 'weather' | 'chat' | 'alert';
 
@@ -296,11 +316,25 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
   const [savedPolygon, setSavedPolygon] = React.useState<[number, number][] | null>(null);
 
   React.useEffect(() => {
-    const memoryPoly = localStorage.getItem('champ_agriculteur_poly');
-    const memoryNdvi = localStorage.getItem('champ_agriculteur_ndvi');
-    
-    if (memoryPoly) setSavedPolygon(JSON.parse(memoryPoly));
-    if (memoryNdvi) setNdviOverlay(JSON.parse(memoryNdvi));
+    const chargerDonneesFirebase = async () => {
+      try {
+        const docRef = doc(db, "agriculteurs", "mon_profil_test");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.polygone) setSavedPolygon(data.polygone);
+          if (data.ndvi) setNdviOverlay(data.ndvi);
+          console.log("Données récupérées depuis Firebase !");
+        } else {
+          console.log("Aucun champ enregistré sur le cloud pour le moment.");
+        }
+      } catch (error) {
+        console.error("Erreur de chargement Firebase:", error);
+      }
+    };
+
+    chargerDonneesFirebase();
   }, []);
 
   const cropData: any = {
@@ -401,11 +435,17 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                     setNdviOverlay(ndviData);
                     setSavedPolygon(displayPoly);
                     
-                    localStorage.setItem('champ_agriculteur_ndvi', JSON.stringify(ndviData));
-                    localStorage.setItem('champ_agriculteur_poly', JSON.stringify(displayPoly));
-                    localStorage.setItem('real_satellite_data', JSON.stringify({
-                      moisture: soilData.moisture || 0.2 
-                    }));
+                    // --- SAUVEGARDE DANS FIREBASE CLOUD FIRESTORE ---
+                    const donneesAgriculteur = {
+                      polygone: displayPoly,
+                      ndvi: ndviData,
+                      humiditeSol: soilData.moisture || 0.2,
+                      dateMiseAJour: new Date().toISOString()
+                    };
+
+                    await setDoc(doc(db, "agriculteurs", "mon_profil_test"), donneesAgriculteur);
+                    console.log("Données sauvegardées avec succès dans Firebase !");
+                    // ------------------------------------------------
                     
                     alert("✅ Analyse Sentinel terminée avec succès !");
                   } else {
