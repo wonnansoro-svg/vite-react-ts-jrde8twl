@@ -188,12 +188,17 @@ const AlertScreen: React.FC = () => {
 };
 
 // --- 5. ÉCRAN DASHBOARD ---
-const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: TabType) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
+const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: string) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
+  
+  // 1. LE CERVEAU (Les variables et la mémoire - TOUT EST EN HAUT !)
+  const [selectedCrop, setSelectedCrop] = React.useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = React.useState(false);
+  
+  // NOUVEAU : Mémoire pour l'image satellite (Bien placée cette fois !)
   const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
-   const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
-  const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
 
+  // Les faux polygones (pour l'exemple)
   const polyMais: [number, number][] = [ [location.lat + 0.0015, location.lon + 0.0005], [location.lat + 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0035], [location.lat - 0.0015, location.lon + 0.0005] ];
   const polyCoton: [number, number][] = [ [location.lat + 0.0020, location.lon - 0.0040], [location.lat + 0.0020, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0010], [location.lat - 0.0010, location.lon - 0.0040] ];
   const polyAnacarde: [number, number][] = [ [location.lat - 0.0025, location.lon + 0.0010], [location.lat - 0.0025, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0050], [location.lat - 0.0055, location.lon + 0.0010] ];
@@ -203,7 +208,7 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
     'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Votre parcelle de coton se porte bien. La croissance végétative est normale. Pensez à vérifier l'humidité du sol." },
     'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "Vos anacardiers sont en pleine forme. L'indice NDVI est excellent. Préparez-vous sereinement pour la prochaine campagne." }
   };
-
+      
   const lireRecommandation = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -219,6 +224,7 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
     }
   };
 
+  // 2. LE VISAGE (L'affichage HTML - Commence avec le return)
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
@@ -226,18 +232,12 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
         <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto shadow-md"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
       </div>
       
+      {/* LA CARTE ET LE DESSIN */}
       <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
-        <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
         <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
           
-          {/* NOUVEAU : LA ZONE DE DESSIN */}
-      // À AJOUTER au début de votre composant DashboardScreen :
-  const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
-  const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
-
-  // ... plus bas, dans votre MapContainer, remplacez le FeatureGroup par ceci :
-
+          {/* NOUVEAU : Outils de dessin pour le NDVI */}
           <FeatureGroup>
             <EditControl
               position="topright"
@@ -245,13 +245,13 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
                 const layer = e.layer;
                 const bounds = layer.getBounds();
                 
-                // 1. Calcul de la zone rectangulaire pour afficher l'image plus tard
+                // 1. Calcul de la zone rectangulaire
                 const leafletBounds = [
                   [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
                   [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
                 ];
 
-                // 2. Conversion des coordonnées pour l'API (Longitude d'abord, puis Latitude)
+                // 2. Conversion des coordonnées
                 const latlngs = layer.getLatLngs()[0];
                 const geoJsonCoords = latlngs.map((coord: any) => [coord.lng, coord.lat]);
                 geoJsonCoords.push(geoJsonCoords[0]); // Fermer le polygone
@@ -260,134 +260,27 @@ const DashboardScreen: React.FC<{ location: LocationState, setIsProfileOpen: (o:
                 alert("📡 Demande envoyée au satellite... Calcul de la santé de vos plantes (NDVI) en cours !");
 
                 try {
-                  // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE (AgroMonitoring)
+                  // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE
                   const API_KEY = "VOTRE_CLE_AGROMONITORING_ICI"; 
 
-                  // ÉTAPE A : Créer la parcelle sur le serveur satellite
+                  // ÉTAPE A : Créer la parcelle
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       name: "Champ Agriculteur",
-                      geo_json: {
-                        type: "Feature",
-                        properties: {},
-                        geometry: { type: "Polygon", coordinates: [geoJsonCoords] }
-                      }
+                      geo_json: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [geoJsonCoords] } }
                     })
                   });
 
                   const polyData = await polyResponse.json();
                   if (!polyData.id) throw new Error("Erreur de création du champ");
 
-                  // ÉTAPE B : Récupérer les images des 30 derniers jours
-                  const end = Math.floor(Date.now() / 1000); // Date d'aujourd'hui
-                  const start = end - (30 * 24 * 60 * 60);   // Il y a 30 jours
+                  // ÉTAPE B : Récupérer les images (30 derniers jours)
+                  const end = Math.floor(Date.now() / 1000);
+                  const start = end - (30 * 24 * 60 * 60);
 
-                  const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
-                  const imgData = await imgResponse.json();
-
-                  if (imgData && imgData.length > 0) {
-                    // Prendre l'image la plus récente (la dernière du tableau)
-                    const latestImage = imgData[imgData.length - 1];
-                    const ndviUrl = latestImage.image.ndvi;
-
-                    // ÉTAPE C : Afficher l'image sur la carte
-                    setNdviOverlay({ url: ndviUrl, bounds: leafletBounds });
-                    alert("✅ Analyse terminée ! Les zones rouges nécessitent votre attention (maladie ou manque d'eau), les zones vertes sont en pleine santé.");
-                  } else {
-                    alert("Nuages détectés ☁️. Aucune image satellite claire n'est disponible pour les 30 derniers jours.");
-                  }
-                } catch (error) {
-                  console.error("Erreur Satellite:", error);
-                  alert("❌ Impossible de contacter le satellite. Avez-vous entré votre clé API ?");
-                } finally {
-                  setIsLoadingNdvi(false);
-                }
-              }}
-              draw={{
-                rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false,
-                polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } }
-              }}
-            />
-          </FeatureGroup>
-
-          {/* C'est ICI que l'image satellite vient se plaquer sur la carte ! */}
-          {ndviOverlay && (
-            <ImageOverlay 
-              url={ndviOverlay.url} 
-              bounds={ndviOverlay.bounds} 
-              opacity={0.8} 
-            />
-          )}
-
-        </MapContainer>
-      </div>
-      </div>
-
-      <div className="px-4 mt-5 -mb-2">
-        <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded-xl shadow-sm flex flex-col items-start relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg">URGENCE</div>
-          <div className="flex items-start w-full mt-1">
-            <AlertTriangle className="text-red-600 mr-3 shrink-0" size={24} />
-            <div className="flex-grow">
-              <h3 className="text-red-800 font-bold text-sm">Alerte Chenilles (Maïs)</h3>
-              <p className="text-red-600 text-xs font-medium mt-0.5">La masse végétale chute rapidement.</p>
-            </div>
-          </div>
-          <button onClick={() => setActiveTab('alert')} className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-sm">
-            Voir l'alerte et contacter un expert
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4 pt-6 space-y-6">
-        <div>
-          <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs</h3>
-          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
-            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 1 - Maïs</h3></div></div>
-            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhyLm-SLLOTWuL0KJasjrC-8Rq7hkfVt5RgQ&s" alt="Coton" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 2 - Coton</h3></div></div>
-            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://image.lecourrier.vn/uploaded/2015/12/31/1014493635601a.jpg" alt="Anacarde" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 3 - Anacarde</h3></div></div>
-          </div>
-        </div>
-      </div>
-      
-      {selectedCrop && cropData[selectedCrop] && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
-            <div className={`absolute top-0 left-0 w-full h-2 ${cropData[selectedCrop].bg}`}></div>
-            
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-black text-gray-800">Détails : {selectedCrop}</h3>
-              <button 
-                onClick={() => lireRecommandation(cropData[selectedCrop].text)} 
-                className={`p-3 rounded-full shadow-md transition-all ${isSpeaking ? 'bg-green-500 text-white animate-pulse' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
-              >
-                <Volume2 size={24} />
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <div className="bg-white p-2 rounded-lg shadow-sm"><Activity className={cropData[selectedCrop].color} size={24} /></div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase">Indice NDVI (Santé)</p>
-                <p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi} <span className="text-xs font-semibold ml-1">({cropData[selectedCrop].status})</span></p>
-              </div>
-            </div>
-
-            <p className="text-gray-700 text-sm mb-6 leading-relaxed border-l-4 border-green-500 pl-3">
-              {cropData[selectedCrop].text}
-            </p>
-            
-            <button onClick={() => {setSelectedCrop(null); window.speechSynthesis.cancel(); setIsSpeaking(false);}} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                  const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start
 
 // --- 6. ÉCRAN MÉTÉO ---
 const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
