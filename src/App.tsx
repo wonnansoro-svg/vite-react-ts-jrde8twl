@@ -280,7 +280,106 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                   const end = Math.floor(Date.now() / 1000);
                   const start = end - (30 * 24 * 60 * 60);
 
-                  const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start
+                  const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
+                  const imgData = await imgResponse.json();
+
+                  if (imgData && imgData.length > 0) {
+                    const latestImage = imgData[imgData.length - 1];
+                    const ndviUrl = latestImage.image.ndvi;
+                    setNdviOverlay({ url: ndviUrl, bounds: leafletBounds });
+                    alert("✅ Analyse terminée !");
+                  } else {
+                    alert("Nuages détectés ☁️. Aucune image satellite claire n'est disponible.");
+                  }
+                } catch (error) {
+                  console.error("Erreur Satellite:", error);
+                  alert("❌ Impossible de contacter le satellite. Avez-vous entré votre clé API ?");
+                } finally {
+                  setIsLoadingNdvi(false);
+                }
+              }}
+              draw={{
+                rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false,
+                polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } }
+              }}
+            />
+          </FeatureGroup>
+
+          {/* Affichage de l'image satellite si elle a été téléchargée */}
+          {ndviOverlay && (
+            <ImageOverlay url={ndviOverlay.url} bounds={ndviOverlay.bounds} opacity={0.8} />
+          )}
+
+        </MapContainer>
+      </div>
+
+      {/* Reste de votre interface... */}
+      <div className="px-4 mt-5 -mb-2">
+        <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded-xl shadow-sm flex flex-col items-start relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg">URGENCE</div>
+          <div className="flex items-start w-full mt-1">
+            <AlertTriangle className="text-red-600 mr-3 shrink-0" size={24} />
+            <div className="flex-grow">
+              <h3 className="text-red-800 font-bold text-sm">Alerte Chenilles (Maïs)</h3>
+              <p className="text-red-600 text-xs font-medium mt-0.5">La masse végétale chute rapidement.</p>
+            </div>
+          </div>
+          <button onClick={() => setActiveTab('alert')} className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-sm">
+            Voir l'alerte et contacter un expert
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 pt-6 space-y-6">
+        <div>
+          <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs</h3>
+          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
+            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 1 - Maïs</h3></div></div>
+            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhyLm-SLLOTWuL0KJasjrC-8Rq7hkfVt5RgQ&s" alt="Coton" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 2 - Coton</h3></div></div>
+            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://image.lecourrier.vn/uploaded/2015/12/31/1014493635601a.jpg" alt="Anacarde" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 3 - Anacarde</h3></div></div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Fenêtre modale des détails de la culture */}
+      {selectedCrop && cropData[selectedCrop] && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
+            <div className={`absolute top-0 left-0 w-full h-2 ${cropData[selectedCrop].bg}`}></div>
+            
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-black text-gray-800">Détails : {selectedCrop}</h3>
+              <button 
+                onClick={() => lireRecommandation(cropData[selectedCrop].text)} 
+                className={`p-3 rounded-full shadow-md transition-all ${isSpeaking ? 'bg-green-500 text-white animate-pulse' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
+              >
+                <Volume2 size={24} />
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="bg-white p-2 rounded-lg shadow-sm"><Activity className={cropData[selectedCrop].color} size={24} /></div>
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase">Indice NDVI (Santé)</p>
+                <p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi} <span className="text-xs font-semibold ml-1">({cropData[selectedCrop].status})</span></p>
+              </div>
+            </div>
+
+            <p className="text-gray-700 text-sm mb-6 leading-relaxed border-l-4 border-green-500 pl-3">
+              {cropData[selectedCrop].text}
+            </p>
+            
+            <button onClick={() => {setSelectedCrop(null); window.speechSynthesis.cancel(); setIsSpeaking(false);}} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 
 // --- 6. ÉCRAN MÉTÉO ---
 const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[], isLoading: boolean }> = ({ location, forecast, isLoading }) => {
