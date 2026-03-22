@@ -357,7 +357,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 alert("📡 Demande envoyée au satellite... Calcul en cours !");
 
                 try {
-                  const API_KEY = "5efa02f1edfc4a79ab94a5810d1eb0bf"; 
+                  const API_KEY = "d932a8e0b9840a95a7078a6cfe7faedc"; 
 
                   // 1. On crée le polygone sur le serveur
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
