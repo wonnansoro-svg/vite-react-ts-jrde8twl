@@ -231,7 +231,7 @@ const AlertScreen: React.FC = () => {
   );
 };
 
-// --- 8. ÉCRAN DASHBOARD (CARTE + POPUPS DES 3 CULTURES) ---
+// --- 8. ÉCRAN DASHBOARD (CARTE + POPUPS DES 3 CULTURES + PUBLICITÉ) ---
 const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: string) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
   const [selectedCrop, setSelectedCrop] = React.useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = React.useState(false);
@@ -336,17 +336,47 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </MapContainer>
       </div>
 
-      <div className="p-4 pt-6 space-y-6">
-        <div>
-          <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs</h3>
-          <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
-            <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 1 - Maïs</h3></div></div>
-            <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhyLm-SLLOTWuL0KJasjrC-8Rq7hkfVt5RgQ&s" alt="Coton" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 2 - Coton</h3></div></div>
-            <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://image.lecourrier.vn/uploaded/2015/12/31/1014493635601a.jpg" alt="Anacarde" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 3 - Anacarde</h3></div></div>
-          </div>
+      <div className="px-4 mt-5">
+        <button onClick={() => setActiveTab('alert')} className="mt-3 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-3 rounded-lg shadow-sm">
+          Voir les alertes Cloud
+        </button>
+      </div>
+
+      <div className="p-4 pt-6">
+        <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs</h3>
+        <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
+          <div onClick={() => setSelectedCrop('Maïs')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400" alt="Maïs" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 1 - Maïs</h3></div></div>
+          <div onClick={() => setSelectedCrop('Coton')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhyLm-SLLOTWuL0KJasjrC-8Rq7hkfVt5RgQ&s" alt="Coton" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 2 - Coton</h3></div></div>
+          <div onClick={() => setSelectedCrop('Anacarde')} className="cursor-pointer bg-white rounded-2xl shadow-sm min-w-[200px] flex-shrink-0 border border-gray-100 overflow-hidden"><div className="relative h-24"><img src="https://image.lecourrier.vn/uploaded/2015/12/31/1014493635601a.jpg" alt="Anacarde" className="w-full h-full object-cover" /></div><div className="p-3"><h3 className="font-bold text-gray-800 text-sm">Parcelle 3 - Anacarde</h3></div></div>
         </div>
       </div>
       
+      {/* NOUVEAU : ESPACE PUBLICITÉ */}
+      <div className="px-4 pb-6 mt-2">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative cursor-pointer hover:shadow-md transition-shadow">
+          <div className="absolute top-2 right-2 bg-black/60 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider z-10">
+            Sponsorisé
+          </div>
+          <div className="h-32 relative">
+            <img src="https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500" alt="Matériel Agricole" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+            <div className="absolute bottom-3 left-3 right-3">
+              <h4 className="text-white font-black text-lg leading-tight">Engrais NPK 15-15-15</h4>
+              <p className="text-gray-200 text-xs mt-1 line-clamp-1">Promo spéciale coopérative : préparez la saison des pluies.</p>
+            </div>
+          </div>
+          <div className="p-3 flex justify-between items-center bg-green-50">
+            <div>
+              <span className="font-black text-green-800 text-sm">12 500 FCFA</span>
+              <span className="text-[10px] text-gray-500 line-through ml-2 font-bold">15 000 FCFA</span>
+            </div>
+            <button className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm">
+              Commander
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* POPUP DÉTAILS CULTURES */}
       {selectedCrop && cropData[selectedCrop] && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
