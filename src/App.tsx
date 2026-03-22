@@ -273,7 +273,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
 
                 try {
                   // ⚠️ REMETTRE VOTRE CLÉ AGROMONITORING ICI
-                  const API_KEY = "VOTRE_CLE_AGROMONITORING_ICI"; 
+                  const API_KEY = "5efa02f1edfc4a79ab94a5810d1eb0bf"; 
 
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
                     method: 'POST',
