@@ -422,117 +422,111 @@ const WeatherScreen: React.FC<{ location: LocationState, forecast: DailyWeather[
 };
 
 // --- 7. ÉCRAN CHAT IA (Connexion API Pure) ---
+// --- 7. ÉCRAN CHAT (SAIDA IA) ---
 const ChatScreen: React.FC = () => {
-  const [messages, setMessages] = useState([{ role: 'assistant', content: "Bonjour ! Je suis SAIDA. Que se passe-t-il dans vos champs aujourd'hui ?" }]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  
-  React.useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  const [messages, setMessages] = React.useState<{role: 'user' | 'ai', text: string}[]>([
+    { role: 'ai', text: "Bonjour ! Je suis SAIDA, votre assistant agricole. Comment puis-je vous aider avec vos cultures aujourd'hui ?" }
+  ]);
+  const [inputMessage, setInputMessage] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
-    const userMessage = input;
-    setInput('');
-    
-    // 1. On affiche le message de l'utilisateur immédiatement
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    // 1. Ajouter le message de l'utilisateur à l'écran
+    const newMessages = [...messages, { role: 'user', text: inputMessage }];
+    setMessages(newMessages as {role: 'user' | 'ai', text: string}[]);
+    setInputMessage('');
     setIsLoading(true);
 
-   try {
-      // 2. RÉCUPÉRATION DE LA CLÉ API (Bypass TypeScript)
-      const API_KEY = (import.meta as any).env.Gemini_API_KEY;
+    try {
+      // ⚠️ REMPLACEZ CETTE CLÉ PAR VOTRE CLÉ GOOGLE GEMINI
+      const API_KEY = "AIzaSyButD7AEmUZ1HnZLy_KUkX9ghVZgUeQz-g"; 
       
-      if (!API_KEY) {
-        throw new Error("Clé API introuvable. Vérifiez les paramètres Vercel.");
-      }
-      
-      // 3. INITIALISATION DE GEMINI (Configuration Pro)
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash", // Modèle de dernière génération
-        // LE CERVEAU DE SAIDA :
-        systemInstruction: "Tu es SAIDA, une experte agronome certifiée en Côte d'Ivoire (spécialisée en cacao, anacarde, hévéa, et cultures vivrières). Ton but est d'aider les agriculteurs locaux avec bienveillance. Règle absolue : tu dois TOUJOURS répondre de manière claire, pratique, et en 2 phrases maximum.",
-        // LES RÉGLAGES DU COMPORTEMENT :
-        generationConfig: {
-          temperature: 0.2,       // Faible = très précise, factuelle, pas d'inventions
-          topP: 0.8,              // Reste concentrée sur le sujet
-          maxOutputTokens: 100,   // Bloque physiquement les réponses trop longues
-        }
+      // On prépare le comportement de l'IA (le "Prompt système")
+      const systemInstruction = "Tu es SAIDA, un assistant agricole expert travaillant en Côte d'Ivoire. Tu aides les agriculteurs avec des conseils simples, pratiques et directs sur la météo, les cultures (maïs, coton, anacarde), et les maladies. Sois chaleureux et concis.";
+
+      // 2. Envoyer la question au cerveau de l'IA (Google Gemini)
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          contents: [{ role: "user", parts: [{ text: inputMessage }] }]
+        })
       });
 
-      // 4. PRÉPARATION DE L'HISTORIQUE (On ignore le message de bienvenue)
-      const chatHistory = messages.slice(1).map(m => ({ 
-        role: m.role === 'assistant' ? 'model' : 'user', 
-        parts: [{ text: m.content }] 
-      }));
+      const data = await response.json();
+      
+      if (data.error) throw new Error(data.error.message);
 
-      // 5. CONNEXION ET ENVOI À L'API
-      const chat = model.startChat({ 
-        history: chatHistory
-      });
+      // 3. Récupérer la réponse et l'afficher
+      const aiResponse = data.candidates[0].content.parts[0].text;
+      setMessages([...newMessages, { role: 'ai', text: aiResponse }] as {role: 'user' | 'ai', text: string}[]);
 
-      const result = await chat.sendMessage(userMessage);
-      
-      // 6. AFFICHAGE DE LA RÉPONSE DE L'IA
-      setMessages((prev) => [...prev, { role: 'assistant', content: result.response.text() }]);
-      
-    } catch (error: any) {
-      console.error("Détails de l'erreur API :", error);
-      
-      // 7. GESTION DES ERREURS INTELLIGENTE
-      let errorMessage = `Désolé, problème de connexion à l'IA : ${error.message}`;
-      
-      // Si c'est l'erreur 429 (Trop de requêtes), on affiche le message poli
-      if (error.message && (error.message.includes("429") || error.message.includes("quota"))) {
-        errorMessage = "Oups, SAIDA est très sollicitée par d'autres agriculteurs en ce moment ! Veuillez patienter environ une minute avant de renvoyer votre message. ⏳";
-      }
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: errorMessage }]);
-      
-    } finally { 
-      setIsLoading(false); 
+    } catch (error) {
+      console.error("Erreur IA:", error);
+      setMessages([...newMessages, { role: 'ai', text: "Désolé, je n'arrive pas à me connecter au serveur. Vérifiez votre connexion ou votre clé API." }] as {role: 'user' | 'ai', text: string}[]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
+    <div className="flex flex-col h-full bg-gray-50 pb-20">
+      {/* En-tête du Chat */}
+      <div className="bg-green-600 p-4 text-white shadow-md z-10">
+        <h2 className="text-xl font-black flex items-center">
+          <MessageCircle className="mr-2" /> SAIDA IA
+        </h2>
+        <p className="text-green-100 text-xs mt-1">Votre expert agricole personnel</p>
+      </div>
+
+      {/* Zone des messages */}
+      <div className="flex-grow overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white text-gray-800 border shadow-sm rounded-bl-none'}`}>
-              {msg.content}
+            <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
+              msg.role === 'user' 
+                ? 'bg-green-500 text-white rounded-tr-sm' 
+                : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
+            }`}>
+              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-white p-3 rounded-2xl border shadow-sm flex items-center space-x-2 rounded-bl-none">
-              <Loader2 className="animate-spin text-green-600" size={16} />
-              <span className="text-sm">SAIDA réfléchit...</span>
+            <div className="bg-white text-gray-500 border border-gray-100 p-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce delay-75"></div>
+              <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce delay-150"></div>
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
-      
-      <div className="absolute bottom-16 left-0 w-full bg-white p-3 border-t flex items-center z-10">
-        <input 
-          type="text" 
-          value={input} 
-          onChange={(e) => setInput(e.target.value)} 
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} 
-          placeholder="Posez votre question à SAIDA..." 
-          className="flex-grow bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none" 
-        />
-        <button 
-          onClick={handleSendMessage} 
-          disabled={isLoading || !input.trim()} 
-          className="ml-2 bg-green-600 text-white p-2.5 rounded-full disabled:bg-gray-400"
-        >
-          <Send size={18} />
-        </button>
+
+      {/* Zone de saisie */}
+      <div className="p-4 bg-white border-t border-gray-100">
+        <div className="flex items-center bg-gray-100 rounded-full p-1 pl-4 shadow-inner">
+          <input 
+            type="text" 
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Posez votre question agricole..."
+            className="flex-grow bg-transparent outline-none text-sm text-gray-700"
+          />
+          <button 
+            onClick={sendMessage}
+            disabled={isLoading || !inputMessage.trim()}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              inputMessage.trim() && !isLoading ? 'bg-green-500 text-white shadow-md' : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            <Send size={18} className={inputMessage.trim() && !isLoading ? 'ml-1' : ''} />
+          </button>
+        </div>
       </div>
     </div>
   );
