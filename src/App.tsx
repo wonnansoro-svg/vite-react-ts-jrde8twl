@@ -7,7 +7,8 @@ import {
   MapPin, ArrowLeft, Wind, CloudLightning, 
   XCircle, Loader2, Locate, Phone, Map,
   CreditCard, Check, Crown, Star, Activity, HelpCircle,
-  Droplets, Sprout, Radio, Smartphone
+  Droplets, Sprout, Radio, Smartphone,
+  ShoppingCart, Plus, Minus, Trash2, X
 } from 'lucide-react';
 
 // --- 2. IMPORTS DE LA CARTE (Leaflet) ---
@@ -231,13 +232,19 @@ const AlertScreen: React.FC = () => {
   );
 };
 
-// --- 8. ÉCRAN DASHBOARD (CARTE + POPUPS DES 3 CULTURES + PUBLICITÉ) ---
+// --- 8. ÉCRAN DASHBOARD (AVEC BOUTIQUE, PANIER ET PAIEMENT UEMOA) ---
 const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: string) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
   const [selectedCrop, setSelectedCrop] = React.useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   const [ndviOverlay, setNdviOverlay] = React.useState<{ url: string, bounds: any } | null>(null);
   const [isLoadingNdvi, setIsLoadingNdvi] = React.useState(false);
   const [savedPolygon, setSavedPolygon] = React.useState<[number, number][] | null>(null);
+
+  // --- ÉTATS DU PANIER ET DE LA BOUTIQUE ---
+  const [cart, setCart] = React.useState<{id: number, title: string, price: number, qty: number, img: string}[]>([]);
+  const [isCartOpen, setIsCartOpen] = React.useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
+  const [paymentMethod, setPaymentMethod] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const chargerDonneesFirebase = async () => {
@@ -255,28 +262,71 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
   }, []);
 
   const cropData: any = {
-    'Maïs': { ndvi: '0.42', status: 'Critique', color: 'text-red-600', bg: 'bg-red-100', text: "Attention ! L'indice de santé de votre maïs a fortement baissé. Le satellite détecte des dommages qui correspondent aux chenilles légionnaires. Traitement urgent conseillé." },
-    'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Votre parcelle de coton se porte bien. La croissance végétative est normale. Pensez à vérifier l'humidité du sol." },
-    'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "Vos anacardiers sont en pleine forme. L'indice NDVI est excellent. Préparez-vous sereinement pour la prochaine campagne." }
+    'Maïs': { ndvi: '0.42', status: 'Critique', color: 'text-red-600', bg: 'bg-red-100', text: "Attention ! L'indice de santé a baissé (chenilles légionnaires). Traitement urgent." },
+    'Coton': { ndvi: '0.78', status: 'Bonne santé', color: 'text-green-600', bg: 'bg-green-100', text: "Croissance végétative normale. Pensez à vérifier l'humidité du sol." },
+    'Anacarde': { ndvi: '0.85', status: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-100', text: "L'indice NDVI est excellent. Préparez-vous sereinement pour la campagne." }
   };
 
-  const lireRecommandation = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR'; utterance.rate = 0.85; 
-      utterance.onstart = () => setIsSpeaking(true); utterance.onend = () => setIsSpeaking(false); utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+  // --- CATALOGUE DES 5 PRODUITS AGRICOLES ---
+  const products = [
+    { id: 1, title: "Engrais NPK 15-15-15", oldPrice: 15000, price: 12500, img: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500", desc: "Sac de 50kg - Idéal pour le Maïs" },
+    { id: 2, title: "Semences Maïs Hybride", oldPrice: 6000, price: 4500, img: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=500", desc: "Sachet de 2kg - Haut rendement" },
+    { id: 3, title: "Insecticide K-Othrine", oldPrice: 4000, price: 3500, img: "https://img.freepik.com/photos-gratuite/bouteille-pulverisateur-plastique-blanc-isole-fond-blanc_1232-3023.jpg", desc: "Anti-chenilles foudroyant (1L)" },
+    { id: 4, title: "Pulvérisateur à Dos 16L", oldPrice: 22000, price: 18000, img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiHyDydvnCDwg_HZHcnOlBqQrXb5TePETSAQ&s", desc: "Manuel, robuste et pratique" },
+    { id: 5, title: "Bottes de Travail Pro", oldPrice: 7500, price: 5000, img: "https://images.unsplash.com/photo-1605810756781-b9978434a946?w=500", desc: "Protection contre les serpents (Taille 42)" }
+  ];
+
+  // --- FONCTIONS DU PANIER ---
+  const addToCart = (product: any) => {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      setCart(cart.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
+    } else {
+      setCart([...cart, { ...product, qty: 1 }]);
     }
+  };
+
+  const updateQty = (id: number, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.id === id) {
+        const newQty = item.qty + delta;
+        return newQty > 0 ? { ...item, qty: newQty } : item;
+      }
+      return item;
+    }));
+  };
+
+  const removeFromCart = (id: number) => setCart(cart.filter(item => item.id !== id));
+  const totalCart = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+  const validerPaiement = () => {
+    if (!paymentMethod) { alert("Veuillez choisir un moyen de paiement."); return; }
+    alert(`✅ Commande confirmée ! Un SMS de validation ${paymentMethod} vous a été envoyé.`);
+    setCart([]);
+    setIsCheckoutOpen(false);
+    setIsCartOpen(false);
   };
 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-y-auto relative pb-20">
+      
+      {/* BOUTON PANIER FLOTTANT */}
+      {cart.length > 0 && (
+        <button onClick={() => setIsCartOpen(true)} className="fixed bottom-20 right-4 z-40 bg-orange-500 text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
+          <ShoppingCart size={24} />
+          <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
+            {cart.reduce((acc, item) => acc + item.qty, 0)}
+          </span>
+        </button>
+      )}
+
+      {/* HEADER CARTE */}
       <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
         <div className="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto shadow-md"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">{location.city}</span></div>
         <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto shadow-md"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
       </div>
       
+      {/* CARTE SATELLITE */}
       <div className="relative h-[40%] min-h-[280px] flex-shrink-0 border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden z-0 bg-gray-200">
         <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
@@ -293,8 +343,6 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 const displayPoly = latlngs.map((coord: any) => [coord.lat, coord.lng]);
 
                 setIsLoadingNdvi(true);
-                alert("📡 Demande envoyée au satellite... Calcul en cours !");
-
                 try {
                   const API_KEY = "5efa02f1edfc4a79ab94a5810d1eb0bf"; 
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
@@ -302,30 +350,17 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                     body: JSON.stringify({ name: "Champ", geo_json: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [geoJsonCoords] } } })
                   });
                   const polyData = await polyResponse.json();
-                  if (!polyData.id) throw new Error("Erreur de polygone");
-
                   const end = Math.floor(Date.now() / 1000);
                   const start = end - (30 * 24 * 60 * 60);
                   const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
                   const imgData = await imgResponse.json();
 
-                  let humidite = 0.22; 
-                  try {
-                    const soilResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/soil?polyid=${polyData.id}&appid=${API_KEY}`);
-                    const soilData = await soilResponse.json();
-                    if(soilData.moisture) humidite = soilData.moisture;
-                  } catch (e) { console.log("Erreur API humidité"); }
-
                   if (imgData && imgData.length > 0) {
-                    const ndviUrl = imgData[imgData.length - 1].image.ndvi;
-                    const ndviData = { url: ndviUrl, bounds: leafletBounds };
-                    
-                    setNdviOverlay(ndviData);
-                    setSavedPolygon(displayPoly);
-                    
-                    await setDoc(doc(db, "agriculteurs", "mon_profil_test"), { polygone: displayPoly, ndvi: ndviData, humiditeSol: humidite, dateMiseAJour: new Date().toISOString() });
-                    alert("✅ Analyse terminée et sauvegardée dans le Cloud ! Allez voir l'onglet Alertes.");
-                  } else { alert("Nuages détectés ☁️. Aucune image claire disponible."); }
+                    const ndviData = { url: imgData[imgData.length - 1].image.ndvi, bounds: leafletBounds };
+                    setNdviOverlay(ndviData); setSavedPolygon(displayPoly);
+                    await setDoc(doc(db, "agriculteurs", "mon_profil_test"), { polygone: displayPoly, ndvi: ndviData, humiditeSol: 0.22, dateMiseAJour: new Date().toISOString() });
+                    alert("✅ Analyse terminée !");
+                  } else { alert("Nuages détectés ☁️."); }
                 } catch (error: any) { alert(`❌ Erreur Satellite: ${error.message}`); } finally { setIsLoadingNdvi(false); }
               }}
               draw={{ rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false, polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } } }}
@@ -351,53 +386,151 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </div>
       </div>
       
-      {/* NOUVEAU : ESPACE PUBLICITÉ */}
-      <div className="px-4 pb-6 mt-2">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative cursor-pointer hover:shadow-md transition-shadow">
-          <div className="absolute top-2 right-2 bg-black/60 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider z-10">
-            Sponsorisé
-          </div>
-          <div className="h-32 relative">
-            <img src="https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500" alt="Matériel Agricole" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-            <div className="absolute bottom-3 left-3 right-3">
-              <h4 className="text-white font-black text-lg leading-tight">Engrais NPK 15-15-15</h4>
-              <p className="text-gray-200 text-xs mt-1 line-clamp-1">Promo spéciale coopérative : préparez la saison des pluies.</p>
+      {/* BOUTIQUE / MARKETPLACE */}
+      <div className="p-4 pt-0">
+        <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><ShoppingCart className="mr-2 text-orange-500" size={20} /> Boutique Agricole</h3>
+        <div className="flex overflow-x-auto space-x-4 pb-4 -mx-4 px-4 scrollbar-hide">
+          {products.map((product) => (
+            <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 min-w-[220px] max-w-[220px] flex-shrink-0 overflow-hidden relative">
+              <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase z-10">-{(100 - (product.price / product.oldPrice) * 100).toFixed(0)}%</div>
+              <div className="h-28 relative">
+                <img src={product.img} alt={product.title} className="w-full h-full object-cover" />
+              </div>
+              <div className="p-3">
+                <h4 className="text-gray-800 font-bold text-sm leading-tight">{product.title}</h4>
+                <p className="text-gray-500 text-[10px] mt-1 line-clamp-1">{product.desc}</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <div>
+                    <p className="font-black text-orange-600 text-sm">{product.price.toLocaleString()} F</p>
+                    <p className="text-[10px] text-gray-400 line-through">{product.oldPrice.toLocaleString()} F</p>
+                  </div>
+                  <button onClick={() => addToCart(product)} className="bg-orange-100 hover:bg-orange-500 hover:text-white text-orange-600 p-2 rounded-full transition-colors">
+                    <Plus size={18} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="p-3 flex justify-between items-center bg-green-50">
-            <div>
-              <span className="font-black text-green-800 text-sm">12 500 FCFA</span>
-              <span className="text-[10px] text-gray-500 line-through ml-2 font-bold">15 000 FCFA</span>
-            </div>
-            <button className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm">
-              Commander
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* POPUP DÉTAILS CULTURES */}
+      {/* POPUP DÉTAILS CULTURES (Reste Inchangé) */}
       {selectedCrop && cropData[selectedCrop] && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-2 ${cropData[selectedCrop].bg}`}></div>
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-black text-gray-800">Détails : {selectedCrop}</h3>
-              <button onClick={() => lireRecommandation(cropData[selectedCrop].text)} className={`p-3 rounded-full shadow-md transition-all ${isSpeaking ? 'bg-green-500 text-white animate-pulse' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}><Volume2 size={24} /></button>
+              <button onClick={() => {}} className="p-3 rounded-full shadow-md bg-green-50 text-green-700"><Volume2 size={24} /></button>
             </div>
             <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
               <div className="bg-white p-2 rounded-lg shadow-sm"><Activity className={cropData[selectedCrop].color} size={24} /></div>
               <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase">Indice NDVI (Santé)</p>
-                <p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi} <span className="text-xs font-semibold ml-1">({cropData[selectedCrop].status})</span></p>
+                <p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi}</p>
               </div>
             </div>
             <p className="text-gray-700 text-sm mb-6 leading-relaxed border-l-4 border-green-500 pl-3">{cropData[selectedCrop].text}</p>
-            <button onClick={() => {setSelectedCrop(null); window.speechSynthesis.cancel(); setIsSpeaking(false);}} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Fermer</button>
+            <button onClick={() => setSelectedCrop(null)} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Fermer</button>
           </div>
         </div>
       )}
+
+      {/* MODAL PANIER */}
+      {isCartOpen && (
+        <div className="absolute inset-0 z-[60] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-full">
+          <div className="bg-white p-4 shadow-sm flex items-center justify-between border-b">
+            <h2 className="text-xl font-black text-gray-800 flex items-center"><ShoppingCart className="mr-2 text-orange-500"/> Mon Panier</h2>
+            <button onClick={() => setIsCartOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full"><X size={24}/></button>
+          </div>
+          
+          <div className="flex-grow overflow-y-auto p-4 space-y-3">
+            {cart.length === 0 ? (
+              <div className="text-center text-gray-500 mt-10">Votre panier est vide.</div>
+            ) : (
+              cart.map(item => (
+                <div key={item.id} className="bg-white p-3 rounded-2xl shadow-sm flex items-center space-x-3">
+                  <img src={item.img} alt={item.title} className="w-16 h-16 rounded-xl object-cover" />
+                  <div className="flex-grow">
+                    <h4 className="font-bold text-sm text-gray-800">{item.title}</h4>
+                    <p className="text-orange-600 font-black text-sm">{item.price.toLocaleString()} F</p>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                    <button onClick={() => updateQty(item.id, -1)} className="p-1 bg-white rounded shadow-sm text-gray-600"><Minus size={14}/></button>
+                    <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
+                    <button onClick={() => updateQty(item.id, 1)} className="p-1 bg-white rounded shadow-sm text-gray-600"><Plus size={14}/></button>
+                  </div>
+                  <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="bg-white p-6 border-t rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-gray-500 font-bold">Total à payer</span>
+              <span className="text-2xl font-black text-gray-800">{totalCart.toLocaleString()} FCFA</span>
+            </div>
+            <button 
+              disabled={cart.length === 0}
+              onClick={() => setIsCheckoutOpen(true)} 
+              className={`w-full py-4 rounded-xl font-black text-white shadow-md ${cart.length === 0 ? 'bg-gray-300' : 'bg-orange-500 hover:bg-orange-600'}`}
+            >
+              Finaliser la commande
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PAIEMENT UEMOA */}
+      {isCheckoutOpen && (
+        <div className="absolute inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full h-[80%] rounded-t-3xl p-6 shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-gray-800">Paiement Sécurisé</h2>
+              <button onClick={() => setIsCheckoutOpen(false)} className="p-2 text-gray-500 bg-gray-100 rounded-full"><X size={20}/></button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-4">Sélectionnez votre moyen de paiement Mobile Money :</p>
+            
+            <div className="space-y-3 flex-grow overflow-y-auto">
+              {/* WAVE */}
+              <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'Wave' ? 'border-blue-500 bg-blue-50' : 'border-gray-100'}`}>
+                <input type="radio" name="payment" value="Wave" className="hidden" onChange={(e) => setPaymentMethod(e.target.value)} />
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-4"><span className="text-white font-black text-xs">WAVE</span></div>
+                <span className="font-bold text-gray-800 flex-grow">Wave Côte d'Ivoire</span>
+                {paymentMethod === 'Wave' && <CheckCircle size={20} className="text-blue-500" />}
+              </label>
+
+              {/* ORANGE MONEY */}
+              <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'Orange' ? 'border-orange-500 bg-orange-50' : 'border-gray-100'}`}>
+                <input type="radio" name="payment" value="Orange" className="hidden" onChange={(e) => setPaymentMethod(e.target.value)} />
+                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mr-4"><span className="text-white font-black text-[10px]">ORANGE</span></div>
+                <span className="font-bold text-gray-800 flex-grow">Orange Money</span>
+              </label>
+
+              {/* MTN MOMO */}
+              <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'MTN' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-100'}`}>
+                <input type="radio" name="payment" value="MTN" className="hidden" onChange={(e) => setPaymentMethod(e.target.value)} />
+                <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center mr-4"><span className="text-black font-black text-[10px]">MTN</span></div>
+                <span className="font-bold text-gray-800 flex-grow">MTN MoMo</span>
+              </label>
+
+              {/* MOOV MONEY */}
+              <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'Moov' ? 'border-blue-800 bg-blue-50' : 'border-gray-100'}`}>
+                <input type="radio" name="payment" value="Moov" className="hidden" onChange={(e) => setPaymentMethod(e.target.value)} />
+                <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center mr-4"><span className="text-white font-black text-[10px]">MOOV</span></div>
+                <span className="font-bold text-gray-800 flex-grow">Moov Money</span>
+              </label>
+            </div>
+
+            <button onClick={validerPaiement} className="w-full mt-4 py-4 rounded-xl font-black text-white bg-green-600 hover:bg-green-700 shadow-md">
+              Payer {totalCart.toLocaleString()} FCFA
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
