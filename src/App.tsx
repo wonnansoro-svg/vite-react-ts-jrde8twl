@@ -232,7 +232,7 @@ const AlertScreen: React.FC = () => {
   );
 };
 
-// --- 8. ÉCRAN DASHBOARD (CARTE FIXE + PANIER + BOUTIQUE) ---
+// --- 8. ÉCRAN DASHBOARD (CARTE FIXE + PANIER AJUSTÉ) ---
 const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) => void, setActiveTab: (t: string) => void }> = ({ location, setIsProfileOpen, setActiveTab }) => {
   const [selectedCrop, setSelectedCrop] = React.useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = React.useState(false);
@@ -310,12 +310,12 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
   };
 
   return (
-    // ⚠️ ATTENTION : J'ai enlevé overflow-y-auto ici. Le conteneur principal ne bouge plus.
-    <div className="flex flex-col h-full bg-gray-50 relative pb-20">
+    // CORRECTION 1 : Suppression de la marge "pb-20" inutile qui créait le blanc en bas
+    <div className="flex flex-col h-full bg-gray-50 relative">
       
-      {/* BOUTON PANIER FLOTTANT (Totalement Fixe) */}
+      {/* BOUTON PANIER FLOTTANT */}
       {cart.length > 0 && (
-        <button onClick={() => setIsCartOpen(true)} className="fixed bottom-24 right-4 z-40 bg-orange-500 text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
+        <button onClick={() => setIsCartOpen(true)} className="fixed bottom-20 right-4 z-40 bg-orange-500 text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
           <ShoppingCart size={24} />
           <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
             {cart.reduce((acc, item) => acc + item.qty, 0)}
@@ -323,18 +323,13 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </button>
       )}
 
-      {/* ==================================================== */}
       {/* ZONE 1 : LA CARTE SATELLITE (FIXE EN HAUT) */}
-      {/* ==================================================== */}
       <div className="relative h-[45%] min-h-[300px] flex-shrink-0 z-20">
-        
-        {/* HEADER CARTE */}
         <div className="absolute top-0 w-full z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
           <div className="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-auto shadow-md"><MapPin size={16} className="text-red-400 animate-bounce" /><span className="text-white font-bold text-xs">{location.city}</span></div>
           <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 bg-white rounded-full border-2 border-green-500 flex items-center justify-center overflow-hidden pointer-events-auto shadow-md"><img src="https://img.freepik.com/photos-premium/daily-farm-life-men-in-agriculture-and-their-connection-to-rural-traditions_914383-31331.jpg" alt="Profil" className="w-full h-full object-cover" /></button>
         </div>
         
-        {/* CARTE */}
         <div className="h-full w-full border-b-4 border-green-600 rounded-b-3xl shadow-md overflow-hidden bg-gray-200">
           <MapContainer center={[location.lat, location.lon]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }} zoomControl={false}>
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
@@ -375,7 +370,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                       setNdviOverlay(ndviData); setSavedPolygon(displayPoly);
                       await setDoc(doc(db, "agriculteurs", "mon_profil_test"), { polygone: displayPoly, ndvi: ndviData, humiditeSol: humidite, dateMiseAJour: new Date().toISOString() });
                       alert("✅ Analyse terminée et sauvegardée dans le Cloud !");
-                    } else { alert("Nuages détectés ☁️. Aucune image claire disponible."); }
+                    } else { alert("Nuages détectés ☁️."); }
                   } catch (error: any) { alert(`❌ Erreur Satellite: ${error.message}`); } finally { setIsLoadingNdvi(false); }
                 }}
                 draw={{ rectangle: false, circle: false, circlemarker: false, marker: false, polyline: false, polygon: { allowIntersection: false, shapeOptions: { color: '#22c55e', fillOpacity: 0.1 } } }}
@@ -387,19 +382,15 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
         </div>
       </div>
 
-      {/* ==================================================== */}
       {/* ZONE 2 : LE CONTENU DÉFILANT (SCROLL) */}
-      {/* ==================================================== */}
       <div className="flex-grow overflow-y-auto relative z-10 pb-6">
         
-        {/* BOUTON ALERTES CLOUD */}
         <div className="px-4 mt-5">
           <button onClick={() => setActiveTab('alert')} className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-3 rounded-lg shadow-sm">
             Voir les alertes Cloud
           </button>
         </div>
 
-        {/* MES CHAMPS */}
         <div className="p-4 pt-6">
           <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><Leaf className="mr-2 text-green-600" size={20} /> Mes Champs</h3>
           <div className="flex overflow-x-auto space-x-4 pb-2 -mx-4 px-4 scrollbar-hide">
@@ -409,16 +400,13 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
           </div>
         </div>
         
-        {/* BOUTIQUE / MARKETPLACE */}
         <div className="p-4 pt-0">
           <h3 className="text-base font-bold text-gray-800 flex items-center mb-4"><ShoppingCart className="mr-2 text-orange-500" size={20} /> Boutique Agricole</h3>
           <div className="flex overflow-x-auto space-x-4 pb-4 -mx-4 px-4 scrollbar-hide">
             {products.map((product) => (
               <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 min-w-[220px] max-w-[220px] flex-shrink-0 overflow-hidden relative">
                 <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase z-10">-{(100 - (product.price / product.oldPrice) * 100).toFixed(0)}%</div>
-                <div className="h-28 relative">
-                  <img src={product.img} alt={product.title} className="w-full h-full object-cover" />
-                </div>
+                <div className="h-28 relative"><img src={product.img} alt={product.title} className="w-full h-full object-cover" /></div>
                 <div className="p-3">
                   <h4 className="text-gray-800 font-bold text-sm leading-tight">{product.title}</h4>
                   <p className="text-gray-500 text-[10px] mt-1 line-clamp-1">{product.desc}</p>
@@ -427,22 +415,18 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                       <p className="font-black text-orange-600 text-sm">{product.price.toLocaleString()} F</p>
                       <p className="text-[10px] text-gray-400 line-through">{product.oldPrice.toLocaleString()} F</p>
                     </div>
-                    <button onClick={() => addToCart(product)} className="bg-orange-100 hover:bg-orange-500 hover:text-white text-orange-600 p-2 rounded-full transition-colors">
-                      <Plus size={18} />
-                    </button>
+                    <button onClick={() => addToCart(product)} className="bg-orange-100 hover:bg-orange-500 hover:text-white text-orange-600 p-2 rounded-full transition-colors"><Plus size={18} /></button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div> {/* FIN ZONE DÉFILANTE */}
+      </div> 
 
-      {/* ==================================================== */}
-      {/* POPUPS ET MODALS (Reste Intact mais en position 'Fixed') */}
-      {/* ==================================================== */}
+      {/* POPUP DÉTAILS CULTURES */}
       {selectedCrop && cropData[selectedCrop] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-2 ${cropData[selectedCrop].bg}`}></div>
             <div className="flex justify-between items-start mb-4">
@@ -451,10 +435,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
             </div>
             <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
               <div className="bg-white p-2 rounded-lg shadow-sm"><Activity className={cropData[selectedCrop].color} size={24} /></div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase">Indice NDVI (Santé)</p>
-                <p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi}</p>
-              </div>
+              <div><p className="text-[10px] text-gray-500 font-bold uppercase">Indice NDVI (Santé)</p><p className={`text-lg font-black ${cropData[selectedCrop].color}`}>{cropData[selectedCrop].ndvi}</p></div>
             </div>
             <p className="text-gray-700 text-sm mb-6 leading-relaxed border-l-4 border-green-500 pl-3">{cropData[selectedCrop].text}</p>
             <button onClick={() => {setSelectedCrop(null); window.speechSynthesis.cancel(); setIsSpeaking(false);}} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Fermer</button>
@@ -492,16 +473,13 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
             )}
           </div>
 
-          <div className="bg-white p-6 border-t rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+          {/* CORRECTION 2 : Ajout de la marge pb-24 ici pour remonter le contenu au-dessus du menu de navigation ! */}
+          <div className="bg-white p-6 pb-24 border-t rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between items-center mb-4">
               <span className="text-gray-500 font-bold">Total à payer</span>
               <span className="text-2xl font-black text-gray-800">{totalCart.toLocaleString()} FCFA</span>
             </div>
-            <button 
-              disabled={cart.length === 0}
-              onClick={() => setIsCheckoutOpen(true)} 
-              className={`w-full py-4 rounded-xl font-black text-white shadow-md ${cart.length === 0 ? 'bg-gray-300' : 'bg-orange-500 hover:bg-orange-600'}`}
-            >
+            <button disabled={cart.length === 0} onClick={() => setIsCheckoutOpen(true)} className={`w-full py-4 rounded-xl font-black text-white shadow-md ${cart.length === 0 ? 'bg-gray-300' : 'bg-orange-500 hover:bg-orange-600'}`}>
               Finaliser la commande
             </button>
           </div>
@@ -511,7 +489,8 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
       {/* MODAL PAIEMENT UEMOA */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full h-[80%] rounded-t-3xl p-6 shadow-2xl flex flex-col">
+          {/* CORRECTION 3 : Ajout de la marge pb-24 ici aussi */}
+          <div className="bg-white w-full max-h-[90%] rounded-t-3xl p-6 pb-24 shadow-2xl flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black text-gray-800">Paiement Sécurisé</h2>
               <button onClick={() => setIsCheckoutOpen(false)} className="p-2 text-gray-500 bg-gray-100 rounded-full"><X size={20}/></button>
