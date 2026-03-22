@@ -357,9 +357,10 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                 alert("📡 Demande envoyée au satellite... Calcul en cours !");
 
                 try {
+                  // 💡 ASTUCE : Si l'erreur persiste, vous devrez créer votre propre clé gratuite sur agromonitoring.com
                   const API_KEY = "d932a8e0b9840a95a7078a6cfe7faedc"; 
 
-                  // 1. On crée le polygone sur le serveur
+                  console.log("1. Envoi du polygone...");
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -368,17 +369,28 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                       geo_json: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [geoJsonCoords] } }
                     })
                   });
+                  
+                  // On vérifie si la création du polygone a échoué
+                  if (!polyResponse.ok) {
+                    const errorData = await polyResponse.json();
+                    throw new Error(`Refus du satellite (Polygone) : ${errorData.message || 'Erreur inconnue'}`);
+                  }
+                  
                   const polyData = await polyResponse.json();
-                  if (!polyData.id) throw new Error("Erreur de polygone");
+                  console.log("Polygone créé avec succès, ID:", polyData.id);
 
-                  // 2. On récupère l'image satellite (Sentinel-2)
+                  console.log("2. Recherche d'images Sentinel-2...");
                   const end = Math.floor(Date.now() / 1000);
                   const start = end - (30 * 24 * 60 * 60);
                   const imgResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/image/search?start=${start}&end=${end}&polyid=${polyData.id}&appid=${API_KEY}`);
+                  
+                  if (!imgResponse.ok) throw new Error("Impossible de récupérer les images satellites.");
                   const imgData = await imgResponse.json();
 
-                  // 3. NOUVEAU : On récupère l'humidité du sol via Radar (Sentinel-1)
+                  console.log("3. Recherche des données de sol Sentinel-1...");
                   const soilResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/soil?polyid=${polyData.id}&appid=${API_KEY}`);
+                  
+                  if (!soilResponse.ok) throw new Error("Impossible de récupérer l'humidité du sol.");
                   const soilData = await soilResponse.json();
 
                   if (imgData && imgData.length > 0) {
@@ -389,22 +401,20 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
                     setNdviOverlay(ndviData);
                     setSavedPolygon(displayPoly);
                     
-                    // SAUVEGARDE DES VRAIES DONNÉES SATELLITES
                     localStorage.setItem('champ_agriculteur_ndvi', JSON.stringify(ndviData));
                     localStorage.setItem('champ_agriculteur_poly', JSON.stringify(displayPoly));
-                    
-                    // On sauvegarde l'humidité réelle pour l'écran Alertes
                     localStorage.setItem('real_satellite_data', JSON.stringify({
-                      moisture: soilData.moisture || 0.2 // (ex: 0.22 = 22% d'humidité)
+                      moisture: soilData.moisture || 0.2 
                     }));
                     
-                    alert("✅ Analyse Sentinel-1 et Sentinel-2 terminée ! Allez voir vos alertes.");
+                    alert("✅ Analyse Sentinel terminée avec succès !");
                   } else {
-                    alert("Nuages détectés ☁️. Aucune image claire disponible.");
+                    alert("☁️ Nuages détectés. Aucune image claire disponible sur les 30 derniers jours.");
                   }
-                } catch (error) {
-                  console.error("Erreur Satellite:", error);
-                  alert("❌ Impossible de contacter le satellite.");
+                } catch (error: any) {
+                  console.error("Erreur Satellite Détaillée :", error);
+                  // L'alerte va maintenant afficher le VRAI problème !
+                  alert(`❌ Erreur : ${error.message}`);
                 } finally {
                   setIsLoadingNdvi(false);
                 }
