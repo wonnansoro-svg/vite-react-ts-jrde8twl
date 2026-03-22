@@ -261,7 +261,7 @@ const DashboardScreen: React.FC<{ location: any, setIsProfileOpen: (o: boolean) 
 
                 try {
                   // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE
-                  const API_KEY = "VOTRE_CLE_AGROMONITORING_ICI"; 
+                  const API_KEY = "d932a8e0b9840a95a7078a6cfe7faedc"; 
 
                   // ÉTAPE A : Créer la parcelle
                   const polyResponse = await fetch(`https://api.agromonitoring.com/agro/1.0/polygons?appid=${API_KEY}`, {
